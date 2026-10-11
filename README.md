@@ -10,12 +10,13 @@ PHP grammars for [tree-sitter](https://github.com/tree-sitter/tree-sitter), fork
 [tree-sitter/tree-sitter-php](https://github.com/tree-sitter/tree-sitter-php). We are grateful
 to its authors and contributors. This is not an official release of that project.
 
-This fork keeps the grammars, the scanner, and the queries of upstream's version 0.24.2 and generates the parsers with
-the [WillBooster/tree-sitter](https://github.com/WillBooster/tree-sitter) generator at ABI 16, whose compact parse
-tables need that fork's runtime.
+This fork keeps the grammars and the queries of upstream's version 0.24.2, and its scanner except for one statement
+adapted to the `tree_sitter/array.h` that the generator writes. It generates the parsers with the
+[WillBooster/tree-sitter](https://github.com/WillBooster/tree-sitter) generator at ABI 16, whose compact parse tables
+need that fork's runtime.
 
 It holds two grammars, as upstream does: `php` parses PHP embedded in text, which starts in text mode and enters PHP at
-an opening tag such as `<?php`, and `php_only` parses PHP code on its own, without an opening tag.
+an opening tag such as `<?php`, and `php_only` parses PHP code on its own, where the opening tag is optional.
 
 ## Usage
 

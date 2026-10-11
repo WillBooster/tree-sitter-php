@@ -14,7 +14,7 @@
 //! assert!(!tree.root_node().has_error());
 //! ```
 //!
-//! [`LANGUAGE_PHP_ONLY`] parses PHP code that is not embedded in text and has no `<?php` tag.
+//! [`LANGUAGE_PHP_ONLY`] parses PHP code that is not embedded in text, where the `<?php` tag is optional.
 //!
 //! [`Parser`]: https://docs.rs/willbooster-tree-sitter/1/tree_sitter/struct.Parser.html
 //! [tree-sitter]: https://tree-sitter.github.io/

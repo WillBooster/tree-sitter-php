@@ -7,7 +7,8 @@ import { generationInputMtime } from '../helpers/generationInputs.js';
 import { Language, Parser } from '@willbooster/web-tree-sitter';
 
 const Root = path.join(import.meta.dirname, '../..');
-// A source prefix that puts each grammar into PHP code: `php` needs the opening tag, which `php_only` does not accept.
+// A source prefix that puts each grammar into PHP code: `php` starts in text and needs the opening tag, while `php_only`
+// starts in PHP code.
 const Prefixes = { php: '<?php\n', php_only: '' };
 const ErrorLine = '$ a\n';
 await Parser.init();

@@ -1,4 +1,5 @@
-// A source and the tree it parses to with each grammar: `php` needs the opening tag, which `php_only` does not accept.
+// A source and the tree it parses to with each grammar: `php` starts in text and needs the opening tag to enter PHP
+// code, while `php_only` starts in PHP code.
 export const ExpectedTrees = {
   php: {
     source: '<?php\necho "Hello, World!";\n',
