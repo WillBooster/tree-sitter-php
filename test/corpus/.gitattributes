@@ -1,3 +1,0 @@
-# The NUL character that errors.txt tests makes git treat it as binary, which would hide its diffs. Kept here because the
-# root .gitattributes is generated.
-errors.txt diff
