@@ -1,0 +1,10 @@
+[tools]
+node = "24.21.0"
+bun = "1.4.3"
+# script/tree-sitter builds the CLI with the `wasm` feature when no released binary runs here; wasmtime's build runs cmake.
+cmake = "4.4.4"
+
+[env]
+# The tree-sitter CLI caches compiled parsers by language name in a directory shared by every checkout and reuses one
+# that is newer than the sources, so commands run in this checkout would otherwise test another checkout's parser.
+TREE_SITTER_LIBDIR = "{{config_root}}/.tmp/tree-sitter-lib"

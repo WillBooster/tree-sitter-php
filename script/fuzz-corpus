@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+# Runs `tree-sitter fuzz` for the given grammar (`php` or `php_only`): it edits each corpus case at random, reparses it
+# incrementally, undoes the edits, and reparses again.
+
+set -euo pipefail
+
+grammar=$1
+cd "$(dirname "$0")/.."
+
+# The CLI matches these patterns against `<corpus file> - <case name>`.
+# After some edits are made and undone, the reparse of the `Nowdocs` case of string.txt differs from a fresh parse: the
+# scanner keeps heredocs that the state it restores does not hold. Upstream's own 0.24.2 parsers do the same, so the
+# check would fail on every run without telling anything about this package's tables.
+exclude='string - Nowdocs$'
+if [[ $grammar == php_only ]]; then
+  # The check runs every corpus case with either grammar, and these need the text outside PHP tags that only `php`
+  # parses.
+  exclude+='|interpolation - (interpolated text |short open tag: |Single line php comment$|Closing tags before |WordPress colon blocks$|octothorpe immediately )'
+fi
+
+mkdir -p .tmp/fuzz
+# Runs in the same checkout may overlap, so each builds the parser into a file of its own.
+parser=$(mktemp ".tmp/fuzz/$grammar.XXXXXX")
+trap 'rm -f "$parser"' EXIT
+script/tree-sitter build -o "$parser" "$grammar"
+script/tree-sitter fuzz --lib-path "$parser" --lang-name "$grammar" --exclude "$exclude"

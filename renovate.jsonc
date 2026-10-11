@@ -1,0 +1,21 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>WillBooster/willbooster-configs:renovate.jsonc"],
+  "packageRules": [
+    {
+      // The Wasm tests run on @willbooster/web-tree-sitter, and the Rust tests, the fuzz job, and script/tree-sitter,
+      // which generates, builds, and tests the parser, on the version of willbooster-tree-sitter that Cargo.lock locks.
+      // Both are the same runtime, so they are updated together.
+      "matchPackageNames": ["@willbooster/web-tree-sitter", "willbooster-tree-sitter"],
+      "groupName": "tree-sitter",
+    },
+    {
+      // The preset exempts @willbooster npm packages, including @willbooster/web-tree-sitter, from its release-age
+      // gate but not this crate, which is released from the same commit; without this rule the grouped update would
+      // bump the npm runtime a week before the crate.
+      "matchDatasources": ["crate"],
+      "matchPackageNames": ["willbooster-tree-sitter"],
+      "minimumReleaseAge": "0 days",
+    },
+  ],
+}

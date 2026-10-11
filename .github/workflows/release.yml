@@ -1,0 +1,27 @@
+name: Release
+'on':
+  push:
+    branches:
+      - main
+  # Runs are dispatched here to complete a release that a failed run left pending. The dispatches target this file,
+  # and crates.io and npm trusted publishing identify the publisher by this caller workflow's file name, so the release
+  # job must stay in .github/workflows/release.yml.
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+  queue: max
+permissions:
+  id-token: write
+  contents: write
+  # for the release to dispatch runs, and for the reusable workflow to list runs
+  actions: write
+jobs:
+  release:
+    uses: WillBooster/reusable-workflows/.github/workflows/release.yml@main
+    with:
+      github_hosted_runner: true
+    secrets:
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL_FOR_RELEASE }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAKUMI_GUARD_TOKEN: ${{ secrets.TAKUMI_GUARD_TOKEN }}
