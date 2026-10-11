@@ -1,0 +1,104 @@
+name: Robustness
+'on':
+  pull_request: null
+  push:
+    branches:
+      - main
+  workflow_dispatch: null
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  # The scanner depends on the C library (e.g. `iswalnum`), and the tree-sitter CLI compiles the parsers natively with
+  # each platform's C compiler, so the tests run on other common platforms too; the Test workflow covers ubuntu-latest.
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-24.04-arm
+          - macos-latest
+          - macos-15-intel
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@v5.1.1
+      - run: bun install --frozen-lockfile
+      - run: bun run test/ci-setup
+      - run: bun run build/ci
+      # Release builds regenerate php/src/ and php_only/src/ from all script/generate inputs. Detect committed output drift here,
+      # including new untracked generated files, which git diff would otherwise miss.
+      - run: git add --intent-to-add -- php/src/ php_only/src/ && git diff --exit-code -- php/src/ php_only/src/
+      - run: bun run test/ci
+  # Runs each parser under libFuzzer with AddressSanitizer and UndefinedBehaviorSanitizer, seeded with the
+  # input of each corpus case. A grammar change alters which tokens the scanner is asked for, so it runs on every
+  # change, not only on scanner changes. The parser runs on WillBooster/tree-sitter at the willbooster-tree-sitter
+  # version in Cargo.lock, the runtime the Rust tests use: the error recovery of upstream's runtime never ends on some
+  # inputs.
+  fuzz:
+    strategy:
+      fail-fast: false
+      matrix:
+        grammar:
+          - php
+          - php_only
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - id: runtime
+        run: |
+          version=$(script/runtime-version)
+          echo "ref=v$version" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v7.0.1
+        with:
+          repository: WillBooster/tree-sitter
+          ref: ${{ steps.runtime.outputs.ref }}
+          path: .tmp/tree-sitter
+          persist-credentials: false
+      # tree-sitter/fuzz-action can only build upstream's runtime, so only its harness and sanitizer ignore list are
+      # used, and its build is reproduced below.
+      - uses: actions/checkout@v7.0.1
+        with:
+          repository: tree-sitter/fuzz-action
+          ref: v4
+          path: .tmp/fuzz-action
+          persist-credentials: false
+      - run: |
+          mkdir -p .tmp/fuzz-seeds
+          script/fuzz-seeds .tmp/fuzz-seeds $(find test/corpus -name '*.txt' | LC_ALL=C sort)
+          # libFuzzer runs just as well without seeds, so the seeds must show that every NUL character reached them.
+          corpus_nuls=$(find test/corpus -name '*.txt' -exec cat {} + | tr -dc '\000' | wc -c)
+          seed_nuls=$(find .tmp/fuzz-seeds -type f -exec cat {} + | tr -dc '\000' | wc -c)
+          echo "NUL characters: $corpus_nuls in the corpus, $seed_nuls in the seeds"
+          test "$corpus_nuls" -gt 0
+          test "$seed_nuls" -eq "$corpus_nuls"
+      - name: Build the fuzzer
+        run: |
+          jq '.. | select((.type? == "STRING" or (.type? == "ALIAS" and .named? == false)) and .value? != "") | .value' \
+            "$GRAMMAR/src/grammar.json" | grep -v '\\' | iconv -c -f UTF-8 -t ASCII//TRANSLIT > .tmp/fuzz-dict
+          # Like tree-sitter/fuzz-action, only the grammar is instrumented, not the runtime.
+          clang -std=c11 -Og -g -c -D_POSIX_C_SOURCE=200112L -D_DEFAULT_SOURCE -I.tmp/tree-sitter/lib/include \
+            -I.tmp/tree-sitter/lib/src .tmp/tree-sitter/lib/src/lib.c -o .tmp/tree-sitter.o
+          clang -std=c11 -Og -g -fsanitize=fuzzer,address,undefined \
+            -fsanitize-ignorelist=.tmp/fuzz-action/ignorelist.ini -I.tmp/tree-sitter/lib/include -I"$GRAMMAR/src" \
+            -DTS_LANG="tree_sitter_$GRAMMAR" .tmp/fuzz-action/fuzzer.c "$GRAMMAR/src/parser.c" "$GRAMMAR/src/scanner.c" \
+            .tmp/tree-sitter.o -o .tmp/fuzzer
+        env:
+          GRAMMAR: ${{ matrix.grammar }}
+      - name: Fuzz
+        run: |
+          mkdir -p .tmp/fuzz-out .tmp/fuzz-artifacts
+          .tmp/fuzzer .tmp/fuzz-out .tmp/fuzz-seeds -dict=.tmp/fuzz-dict -artifact_prefix=.tmp/fuzz-artifacts/ \
+            -timeout=10 -max_total_time=300 -max_len=4096
+      - uses: actions/upload-artifact@v7.0.2
+        if: failure()
+        with:
+          name: fuzzer-artifacts-${{ matrix.grammar }}
+          path: .tmp/fuzz-artifacts/
+          retention-days: 7

@@ -3254,7 +3254,73 @@
   {
     "type": "name",
     "named": true,
-    "fields": {}
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "assignment_expression",
+          "named": true
+        },
+        {
+          "type": "augmented_assignment_expression",
+          "named": true
+        },
+        {
+          "type": "binary_expression",
+          "named": true
+        },
+        {
+          "type": "clone_expression",
+          "named": true
+        },
+        {
+          "type": "conditional_expression",
+          "named": true
+        },
+        {
+          "type": "error_suppression_expression",
+          "named": true
+        },
+        {
+          "type": "include_expression",
+          "named": true
+        },
+        {
+          "type": "include_once_expression",
+          "named": true
+        },
+        {
+          "type": "match_expression",
+          "named": true
+        },
+        {
+          "type": "primary_expression",
+          "named": true
+        },
+        {
+          "type": "reference_assignment_expression",
+          "named": true
+        },
+        {
+          "type": "require_expression",
+          "named": true
+        },
+        {
+          "type": "require_once_expression",
+          "named": true
+        },
+        {
+          "type": "unary_op_expression",
+          "named": true
+        },
+        {
+          "type": "yield_expression",
+          "named": true
+        }
+      ]
+    }
   },
   {
     "type": "named_label_statement",

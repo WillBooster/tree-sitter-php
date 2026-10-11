@@ -1,0 +1,6 @@
+examples/WordPress/wp-includes/class-wp-block-processor.php
+examples/WordPress/wp-includes/php-compat/readonly.php
+examples/framework/tests/Database/DatabaseSqliteSchemaStateTest.php
+examples/framework/tests/Foundation/Fixtures/bad-syntax-strategy.php
+examples/phpunit/tests/end-to-end/code-coverage/_files/parse-error/src/CannotBeParsed.php
+examples/phpunit/tests/end-to-end/test-doubles/_files/TestDoubleAndPartialFunctionApplicationTest.php
