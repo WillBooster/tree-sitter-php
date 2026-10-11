@@ -12,8 +12,9 @@ to its authors and contributors. This is not an official release of that project
 
 This fork keeps the grammars and the queries of upstream's version 0.24.2, and its scanner except for one statement
 adapted to the `tree_sitter/array.h` that the generator writes. It generates the parsers with the
-[WillBooster/tree-sitter](https://github.com/WillBooster/tree-sitter) generator at ABI 16, whose compact parse tables
-need that fork's runtime.
+[WillBooster/tree-sitter](https://github.com/WillBooster/tree-sitter) generator. The parsers carry that fork's own ABI
+number, so they load only with its runtime (`willbooster-tree-sitter`, `@willbooster/web-tree-sitter`), version 2.0.0
+or later, and that runtime loads no parser that upstream's generator wrote.
 
 It holds two grammars, as upstream does: `php` parses PHP embedded in text, which starts in text mode and enters PHP at
 an opening tag such as `<?php`, and `php_only` parses PHP code on its own, where the opening tag is optional.
@@ -21,7 +22,7 @@ an opening tag such as `<?php`, and `php_only` parses PHP code on its own, where
 ## Usage
 
 The npm package ships `tree-sitter-php.wasm` and `tree-sitter-php_only.wasm` for
-[@willbooster/web-tree-sitter](https://www.npmjs.com/package/@willbooster/web-tree-sitter) version 1.4.3 or later, which runs in Node.js, Bun, browsers, and Cloudflare Workers. In Node.js and Bun, load the grammar from its path:
+[@willbooster/web-tree-sitter](https://www.npmjs.com/package/@willbooster/web-tree-sitter) version 2.0.0 or later, which runs in Node.js, Bun, browsers, and Cloudflare Workers. In Node.js and Bun, load the grammar from its path:
 
 ```js
 import { fileURLToPath } from 'node:url';
@@ -69,7 +70,7 @@ fuzzed with:
 
 ```toml
 [dependencies]
-tree-sitter = { package = "willbooster-tree-sitter", version = "1.4.3" }
+tree-sitter = { package = "willbooster-tree-sitter", version = "2" }
 tree-sitter-php = { package = "willbooster-tree-sitter-php", version = "1" }
 ```
 
@@ -98,7 +99,7 @@ not the ones this package ships with. Its first run downloads that CLI from the 
 with `cargo` (whose build runs the CMake that `mise.toml` pins) when the download fails or the release has no binary that runs here. Run other CLI commands through it as
 well (e.g. `script/tree-sitter parse --grammar-path php file.php`).
 
-`bun run generate` records a fresh ABI 16 generation profile from the applicable `test/corpus` cases and Git-tracked
+`bun run generate` records a fresh generation profile from the applicable `test/corpus` cases and Git-tracked
 files in `examples/` for each grammar, then generates compact parser tables. The parsers also embed metadata from `tree-sitter.json`. After changing a grammar,
 `tree-sitter.json`, a corpus case, or a tracked example,
 regenerate and commit `php/src/` and `php_only/src/`. Stage added or removed examples with `git add -A examples` before generation so the profile uses the intended file list.
