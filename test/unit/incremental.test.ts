@@ -19,7 +19,7 @@ for (const grammar of ['php', 'php_only']) {
         TREE_SITTER_EDITS: process.env.TREE_SITTER_EDITS ?? '10',
       },
       check: (output) => {
-        expect(output).toMatch(new RegExp(String.raw`^ +\d+\. ${grammar} - corpus - `, 'm'));
+        expect(output).toMatch(new RegExp(String.raw`^ +\d+\. ${grammar} - corpus - string - Nowdocs$`, 'm'));
         expect(output).not.toContain('failed fuzzing');
       },
     }
