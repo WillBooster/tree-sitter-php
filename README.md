@@ -10,8 +10,8 @@ PHP grammars for [tree-sitter](https://github.com/tree-sitter/tree-sitter), fork
 [tree-sitter/tree-sitter-php](https://github.com/tree-sitter/tree-sitter-php). We are grateful
 to its authors and contributors. This is not an official release of that project.
 
-This fork keeps the grammars and the queries of upstream's version 0.24.2, with fixes to incremental nowdoc parsing
-in its external scanner. It generates the parsers with the
+This fork keeps the grammars and the queries of upstream's version 0.24.2. Its external scanner adapts to the generated
+array API and fixes incremental heredoc parsing. It generates the parsers with the
 [WillBooster/tree-sitter](https://github.com/WillBooster/tree-sitter) generator. The parsers carry that fork's own ABI
 number, so they load only with its runtime (`willbooster-tree-sitter`, `@willbooster/web-tree-sitter`), version 2.0.0
 or later, and that runtime loads no parser that upstream's generator wrote.
