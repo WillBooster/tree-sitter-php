@@ -50,11 +50,6 @@ typedef struct {
 
 typedef enum { Error, End } ScanContentResult;
 
-static inline void reset_heredoc(Heredoc *heredoc) {
-    array_delete(&heredoc->word);
-    heredoc->end_word_indentation_allowed = false;
-}
-
 static inline void advance(TSLexer *lexer) { lexer->advance(lexer, false); }
 
 static inline void skip(TSLexer *lexer) { lexer->advance(lexer, true); }
@@ -86,8 +81,9 @@ static void deserialize(Scanner *scanner, const char *buffer, unsigned length) {
     scanner->has_leading_whitespace = false;
 
     for (uint32_t i = 0; i < scanner->heredocs.size; i++) {
-        reset_heredoc(array_get(&scanner->heredocs, i));
+        array_delete(&scanner->heredocs.contents[i].word);
     }
+    array_clear(&scanner->heredocs);
 
     if (length == 0) {
         return;
@@ -95,14 +91,9 @@ static void deserialize(Scanner *scanner, const char *buffer, unsigned length) {
 
     uint8_t open_heredoc_count = buffer[size++];
     for (unsigned i = 0; i < open_heredoc_count; i++) {
-        Heredoc *heredoc = NULL;
-        if (i < scanner->heredocs.size) {
-            heredoc = array_get(&scanner->heredocs, i);
-        } else {
-            Heredoc new_heredoc = heredoc_new();
-            array_push(&scanner->heredocs, new_heredoc);
-            heredoc = array_back(&scanner->heredocs);
-        }
+        Heredoc new_heredoc = heredoc_new();
+        array_push(&scanner->heredocs, new_heredoc);
+        Heredoc *heredoc = array_back(&scanner->heredocs);
 
         heredoc->end_word_indentation_allowed = buffer[size++];
         memcpy(&heredoc->word.size, &buffer[size], sizeof(uint32_t));
