@@ -104,6 +104,7 @@ module.exports = function defineGrammar(dialect) {
       $.heredoc_start,
       $.heredoc_end,
       $.nowdoc_string,
+      $._heredoc_line_start,
       $.sentinel_error, // Unused token used to indicate error recovery mode
     ],
 
@@ -1457,9 +1458,9 @@ module.exports = function defineGrammar(dialect) {
       string_content: _ => prec.right(repeat1(token.immediate(prec(1, /\\?[^'\\]+/)))),
 
       heredoc_body: $ => seq(
-        $._new_line,
+        $._heredoc_new_line,
         repeat1(prec.right(seq(
-          optional($._new_line),
+          optional($._heredoc_new_line),
           $._interpolated_string_body_heredoc,
         ))),
       ),
@@ -1472,12 +1473,14 @@ module.exports = function defineGrammar(dialect) {
         choice(
           seq(
             field('value', $.heredoc_body),
-            $._new_line,
+            $._heredoc_new_line,
           ),
           field('value', optional($.heredoc_body)),
         ),
         field('end_tag', $.heredoc_end),
       ),
+
+      _heredoc_new_line: $ => seq($._new_line, $._heredoc_line_start),
 
       _new_line: _ => /\r?\n|\r/,
 

@@ -18,3 +18,231 @@ PHP;
       value: (nowdoc_body
         (nowdoc_string))
       end_tag: (heredoc_end))))
+
+==========================
+Nowdoc concatenated after closer
+==========================
+
+<?php
+$a = <<<'SQL'
+x
+SQL.PHP_EOL;
+
+---
+
+(program
+  (php_tag)
+  (expression_statement
+    (assignment_expression
+      left: (variable_name
+        (name))
+      right: (binary_expression
+        left: (nowdoc
+          identifier: (heredoc_start)
+          value: (nowdoc_body
+            (nowdoc_string))
+          end_tag: (heredoc_end))
+        right: (name)))))
+
+==========================
+Heredoc concatenated after closer
+==========================
+
+<?php
+$a = <<<SQL
+x
+SQL.PHP_EOL;
+
+---
+
+(program
+  (php_tag)
+  (expression_statement
+    (assignment_expression
+      left: (variable_name
+        (name))
+      right: (binary_expression
+        left: (heredoc
+          identifier: (heredoc_start)
+          value: (heredoc_body
+            (string_content))
+          end_tag: (heredoc_end))
+        right: (name)))))
+
+==========================
+Heredoc label-like content after interpolation
+==========================
+
+<?php
+$a = <<<SQL
+$foo SQL.PHP_EOL
+{$foo}SQL.PHP_EOL
+SQL;
+
+---
+
+(program
+  (php_tag)
+  (expression_statement
+    (assignment_expression
+      (variable_name (name))
+      (heredoc
+        (heredoc_start)
+        (heredoc_body
+          (variable_name (name))
+          (string_content)
+          (variable_name (name))
+          (string_content))
+        (heredoc_end)))))
+
+==========================
+Nested heredocs preserve saved-state capacity
+==========================
+
+<?php
+$a = <<<TAG8XXXXXXXXXXXXXXXXXXXXXXX
+{$foo[<<<TAG7XXXXXXXXXXXXXXXXXXXXXXX
+{$foo[<<<TAG6XXXXXXXXXXXXXXXXXXXXXXX
+{$foo[<<<TAG5XXXXXXXXXXXXXXXXXXXXXXX
+{$foo[<<<TAG4XXXXXXXXXXXXXXXXXXXXXXX
+{$foo[<<<TAG3XXXXXXXXXXXXXXXXXXXXXXX
+{$foo[<<<TAG2XXXXXXXXXXXXXXXXXXXXXXX
+{$foo[<<<TAG1XXXXXXXXXXXXXXXXXXXXXXX
+{$foo[<<<TAG0XXXXXXXXXXXXXXXXXXXXXXX
+x
+TAG0XXXXXXXXXXXXXXXXXXXXXXX
+]}
+TAG1XXXXXXXXXXXXXXXXXXXXXXX
+]}
+TAG2XXXXXXXXXXXXXXXXXXXXXXX
+]}
+TAG3XXXXXXXXXXXXXXXXXXXXXXX
+]}
+TAG4XXXXXXXXXXXXXXXXXXXXXXX
+]}
+TAG5XXXXXXXXXXXXXXXXXXXXXXX
+]}
+TAG6XXXXXXXXXXXXXXXXXXXXXXX
+]}
+TAG7XXXXXXXXXXXXXXXXXXXXXXX
+]}
+TAG8XXXXXXXXXXXXXXXXXXXXXXX;
+
+---
+
+(program
+  (php_tag)
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (heredoc
+        (heredoc_start)
+        (heredoc_body
+          (subscript_expression
+            (variable_name
+              (name))
+            (heredoc
+              (heredoc_start)
+              (heredoc_body
+                (subscript_expression
+                  (variable_name
+                    (name))
+                  (heredoc
+                    (heredoc_start)
+                    (heredoc_body
+                      (subscript_expression
+                        (variable_name
+                          (name))
+                        (heredoc
+                          (heredoc_start)
+                          (heredoc_body
+                            (subscript_expression
+                              (variable_name
+                                (name))
+                              (heredoc
+                                (heredoc_start)
+                                (heredoc_body
+                                  (subscript_expression
+                                    (variable_name
+                                      (name))
+                                    (heredoc
+                                      (heredoc_start)
+                                      (heredoc_body
+                                        (subscript_expression
+                                          (variable_name
+                                            (name))
+                                          (heredoc
+                                            (heredoc_start)
+                                            (heredoc_body
+                                              (subscript_expression
+                                                (variable_name
+                                                  (name))
+                                                (heredoc
+                                                  (heredoc_start)
+                                                  (heredoc_body
+                                                    (subscript_expression
+                                                      (variable_name
+                                                        (name))
+                                                      (heredoc
+                                                        (heredoc_start)
+                                                        (heredoc_body
+                                                          (string_content))
+                                                        (heredoc_end))))
+                                                  (heredoc_end))))
+                                            (heredoc_end))))
+                                      (heredoc_end))))
+                                (heredoc_end))))
+                          (heredoc_end))))
+                    (heredoc_end))))
+              (heredoc_end))))
+        (heredoc_end)))))
+
+==========================
+Heredoc closes before concatenation despite a later label
+==========================
+
+<?php
+$a = <<<SQL
+x
+SQL.bar();
+SQL;
+
+---
+
+(program
+  (php_tag)
+  (expression_statement
+    (assignment_expression
+      (variable_name (name))
+      (binary_expression
+        (heredoc
+          (heredoc_start)
+          (heredoc_body (string_content))
+          (heredoc_end))
+        (function_call_expression
+          (name)
+          (arguments)))))
+  (expression_statement (name)))
+
+==========================
+Heredoc closes on carriage-return-only lines
+==========================
+
+<?php$a = <<<SQLxSQL.bar();SQL;
+---
+
+(program
+  (php_tag)
+  (expression_statement
+    (assignment_expression
+      (variable_name (name))
+      (binary_expression
+        (heredoc
+          (heredoc_start)
+          (heredoc_body (string_content))
+          (heredoc_end))
+        (function_call_expression
+          (name)
+          (arguments)))))
+  (expression_statement (name)))
