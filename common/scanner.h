@@ -198,24 +198,11 @@ static inline bool scan_nowdoc_string(Scanner *scanner, TSLexer *lexer) {
         advance(lexer);
         has_consumed_content = true;
 
-        end_tag_matched = (i == heredoc_tag.size - 1 && (iswspace(lexer->lookahead) || lexer->lookahead == ';' ||
-                                                         lexer->lookahead == ',' || lexer->lookahead == ')'));
+        end_tag_matched = (i == heredoc_tag.size - 1 && !is_valid_name_char(lexer));
     }
 
     if (end_tag_matched) {
-        // There may be an arbitrary amount of white space after the end tag
-        while (iswspace(lexer->lookahead) && lexer->lookahead != '\r' && lexer->lookahead != '\n') {
-            advance(lexer);
-            has_consumed_content = true;
-        }
-
-        // Return to allow the end tag parsing if we've encountered an end tag
-        // at a valid position
-        if (lexer->lookahead == ';' || lexer->lookahead == ',' || lexer->lookahead == ')' || lexer->lookahead == '\n' ||
-            lexer->lookahead == '\r') {
-            // , and ) is needed to support heredoc in function arguments
-            return false;
-        }
+        return false;
     }
 
     for (bool has_content = has_consumed_content;; has_content = true) {
@@ -260,25 +247,11 @@ static bool scan_encapsed_part_string(Scanner *scanner, TSLexer *lexer, bool is_
             has_consumed_content = true;
             advance(lexer);
 
-            end_tag_matched = (i == heredoc_tag.size - 1 && (iswspace(lexer->lookahead) || lexer->lookahead == ';' ||
-                                                             lexer->lookahead == ',' || lexer->lookahead == ')'));
+            end_tag_matched = (i == heredoc_tag.size - 1 && !is_valid_name_char(lexer));
         }
 
         if (end_tag_matched) {
-            // There may be an arbitrary amount of white space after the end tag
-            // However, we should not consume \r or \n
-            while (iswspace(lexer->lookahead) && lexer->lookahead != '\r' && lexer->lookahead != '\n') {
-                advance(lexer);
-                has_consumed_content = true;
-            }
-
-            // Return to allow the end tag parsing if we've encountered an end
-            // tag at a valid position
-            if (lexer->lookahead == ';' || lexer->lookahead == ',' || lexer->lookahead == ')' ||
-                lexer->lookahead == '\n' || lexer->lookahead == '\r') {
-                // , and ) is needed to support heredoc in function arguments
-                return false;
-            }
+            return false;
         }
     }
 
