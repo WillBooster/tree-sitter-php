@@ -17,6 +17,7 @@ enum TokenType {
     HEREDOC_START,
     HEREDOC_END,
     NOWDOC_STRING,
+    HEREDOC_LINE_START,
     SENTINEL_ERROR, // Unused token used to indicate error recovery mode
 };
 
@@ -34,6 +35,7 @@ static inline bool string_eq(String *self, String *other) {
 
 typedef struct {
     bool end_word_indentation_allowed;
+    bool has_content_on_line;
     String word;
 } Heredoc;
 
@@ -61,10 +63,11 @@ static unsigned serialize(Scanner *scanner, char *buffer) {
     for (unsigned j = 0; j < scanner->heredocs.size; j++) {
         Heredoc *heredoc = &scanner->heredocs.contents[j];
         unsigned word_size = heredoc->word.size * sizeof(heredoc->word.contents[0]);
-        if (size + 5 + word_size >= TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
+        if (size + 6 + word_size >= TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
             return 0;
         }
         buffer[size++] = (char)heredoc->end_word_indentation_allowed;
+        buffer[size++] = (char)heredoc->has_content_on_line;
         memcpy(&buffer[size], &heredoc->word.size, sizeof(uint32_t));
         size += sizeof(uint32_t);
         if (heredoc->word.size > 0) {
@@ -96,6 +99,7 @@ static void deserialize(Scanner *scanner, const char *buffer, unsigned length) {
         Heredoc *heredoc = array_back(&scanner->heredocs);
 
         heredoc->end_word_indentation_allowed = buffer[size++];
+        heredoc->has_content_on_line = buffer[size++];
         memcpy(&heredoc->word.size, &buffer[size], sizeof(uint32_t));
         size += sizeof(uint32_t);
         unsigned word_size = heredoc->word.size * sizeof(heredoc->word.contents[0]);
@@ -227,13 +231,15 @@ static bool scan_encapsed_part_string(Scanner *scanner, TSLexer *lexer, bool is_
                                       bool is_execution_string) {
     bool has_consumed_content = false;
 
-    if (is_heredoc && scanner->heredocs.size > 0 && lexer->get_column(lexer) == 0) {
+    if (is_heredoc && scanner->heredocs.size > 0 && !array_back(&scanner->heredocs)->has_content_on_line) {
+        uint32_t indentation = 0;
         // While PHP requires the heredoc end tag to be the very first on a new
         // line, there may be an arbitrary amount of whitespace before the
         // closing token However, we should not consume \r or \n
         while (iswspace(lexer->lookahead) && lexer->lookahead != '\r' && lexer->lookahead != '\n') {
             advance(lexer);
             has_consumed_content = true;
+            indentation++;
         }
 
         String heredoc_tag = array_back(&scanner->heredocs)->word;
@@ -250,7 +256,7 @@ static bool scan_encapsed_part_string(Scanner *scanner, TSLexer *lexer, bool is_
             end_tag_matched = (i == heredoc_tag.size - 1 && !is_valid_name_char(lexer));
         }
 
-        if (end_tag_matched) {
+        if (end_tag_matched && lexer->get_column(lexer) == indentation + heredoc_tag.size) {
             return false;
         }
     }
@@ -355,6 +361,14 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     scanner->has_leading_whitespace = false;
 
     lexer->mark_end(lexer);
+
+    if (valid_symbols[HEREDOC_LINE_START]) {
+        lexer->result_symbol = HEREDOC_LINE_START;
+        if (scanner->heredocs.size > 0) {
+            array_back(&scanner->heredocs)->has_content_on_line = false;
+        }
+        return true;
+    }
 
     if (valid_symbols[ENCAPSED_STRING_CHARS_AFTER_VARIABLE]) {
         lexer->result_symbol = ENCAPSED_STRING_CHARS_AFTER_VARIABLE;
@@ -495,7 +509,13 @@ static inline void external_scanner_deserialize(void *payload, const char *buffe
 
 static inline bool external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid_symbols) {
     Scanner *scanner = (Scanner *)payload;
-    return scan(scanner, lexer, valid_symbols);
+    bool result = scan(scanner, lexer, valid_symbols);
+    if (result && scanner->heredocs.size > 0 &&
+        (lexer->result_symbol == ENCAPSED_STRING_CHARS_HEREDOC ||
+         lexer->result_symbol == ENCAPSED_STRING_CHARS_AFTER_VARIABLE_HEREDOC)) {
+        array_back(&scanner->heredocs)->has_content_on_line = true;
+    }
+    return result;
 }
 
 static inline void external_scanner_destroy(void *payload) {

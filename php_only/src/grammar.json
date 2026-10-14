@@ -7686,7 +7686,7 @@
       "members": [
         {
           "type": "SYMBOL",
-          "name": "_new_line"
+          "name": "_heredoc_new_line"
         },
         {
           "type": "REPEAT1",
@@ -7701,7 +7701,7 @@
                   "members": [
                     {
                       "type": "SYMBOL",
-                      "name": "_new_line"
+                      "name": "_heredoc_new_line"
                     },
                     {
                       "type": "BLANK"
@@ -7779,7 +7779,7 @@
                 },
                 {
                   "type": "SYMBOL",
-                  "name": "_new_line"
+                  "name": "_heredoc_new_line"
                 }
               ]
             },
@@ -7808,6 +7808,19 @@
             "type": "SYMBOL",
             "name": "heredoc_end"
           }
+        }
+      ]
+    },
+    "_heredoc_new_line": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "_new_line"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_heredoc_line_start"
         }
       ]
     },
@@ -9562,6 +9575,10 @@
     {
       "type": "SYMBOL",
       "name": "nowdoc_string"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_heredoc_line_start"
     },
     {
       "type": "SYMBOL",

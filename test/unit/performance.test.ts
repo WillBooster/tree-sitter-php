@@ -37,6 +37,23 @@ for (const [grammar, prefix] of Object.entries(Prefixes)) {
       ).toBe(false);
     });
 
+    test('parses interpolation-heavy heredoc lines in linear time', { timeout: 60_000 }, () => {
+      for (const fragment of ['$foo x ', '{$foo}SQL.PHP_EOL ']) {
+        const source = (count: number): string => `${prefix}$a = <<<SQL\n${fragment.repeat(count)}\nSQL;\n`;
+        const small = source(200);
+        const large = source(2000);
+        parseCpuTime(parser, large, false);
+        parseCpuTime(parser, large, false);
+        let smallFastest = Infinity;
+        let largeFastest = Infinity;
+        for (let run = 0; run < 5; run++) {
+          smallFastest = Math.min(smallFastest, parseCpuTime(parser, small, false));
+          largeFastest = Math.min(largeFastest, parseCpuTime(parser, large, false));
+        }
+        expect(largeFastest / smallFastest, fragment).toBeLessThan(18);
+      }
+    });
+
     // Consumers parse files being edited, so recovering from many errors must stay linear: ten times the lines take
     // about ten times as long, against a hundred times for quadratic recovery. The ratio catches a cost that grows
     // faster than the input even on a slow CI runner. The parses are timed in the CPU time of the thread that runs them:
@@ -60,13 +77,13 @@ for (const [grammar, prefix] of Object.entries(Prefixes)) {
   });
 }
 
-function parseCpuTime(parser: Parser, source: string): number {
+function parseCpuTime(parser: Parser, source: string, expectedError = true): number {
   const start = process.threadCpuUsage();
   const tree = parser.parse(source);
   const { system, user } = process.threadCpuUsage(start);
   if (!tree) throw new Error('The parser returned no tree');
   const { hasError } = tree.rootNode;
   tree.delete();
-  expect(hasError).toBe(true);
+  expect(hasError).toBe(expectedError);
   return system + user;
 }
