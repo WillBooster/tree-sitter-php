@@ -227,7 +227,7 @@ static bool scan_encapsed_part_string(Scanner *scanner, TSLexer *lexer, bool is_
                                       bool is_execution_string) {
     bool has_consumed_content = false;
 
-    if (is_heredoc && scanner->heredocs.size > 0) {
+    if (is_heredoc && scanner->heredocs.size > 0 && lexer->get_column(lexer) == 0) {
         // While PHP requires the heredoc end tag to be the very first on a new
         // line, there may be an arbitrary amount of whitespace before the
         // closing token However, we should not consume \r or \n

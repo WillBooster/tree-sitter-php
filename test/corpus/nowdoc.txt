@@ -68,3 +68,29 @@ SQL.PHP_EOL;
             (string_content))
           end_tag: (heredoc_end))
         right: (name)))))
+
+==========================
+Heredoc label-like content after interpolation
+==========================
+
+<?php
+$a = <<<SQL
+$foo SQL.PHP_EOL
+{$foo}SQL.PHP_EOL
+SQL;
+
+---
+
+(program
+  (php_tag)
+  (expression_statement
+    (assignment_expression
+      (variable_name (name))
+      (heredoc
+        (heredoc_start)
+        (heredoc_body
+          (variable_name (name))
+          (string_content)
+          (variable_name (name))
+          (string_content))
+        (heredoc_end)))))
