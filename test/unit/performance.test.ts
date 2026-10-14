@@ -44,11 +44,15 @@ for (const [grammar, prefix] of Object.entries(Prefixes)) {
         const large = source(2000);
         parseCpuTime(parser, large, false);
         parseCpuTime(parser, large, false);
+        let repetitions = 1;
+        while (parseCpuTime(parser, small, false, repetitions) < 50_000) {
+          repetitions *= 2;
+        }
         let smallFastest = Infinity;
         let largeFastest = Infinity;
         for (let run = 0; run < 5; run++) {
-          smallFastest = Math.min(smallFastest, parseCpuTime(parser, small, false));
-          largeFastest = Math.min(largeFastest, parseCpuTime(parser, large, false));
+          smallFastest = Math.min(smallFastest, parseCpuTime(parser, small, false, repetitions));
+          largeFastest = Math.min(largeFastest, parseCpuTime(parser, large, false, repetitions));
         }
         expect(largeFastest / smallFastest, fragment).toBeLessThan(18);
       }
@@ -77,13 +81,15 @@ for (const [grammar, prefix] of Object.entries(Prefixes)) {
   });
 }
 
-function parseCpuTime(parser: Parser, source: string, expectedError = true): number {
+function parseCpuTime(parser: Parser, source: string, expectedError = true, repetitions = 1): number {
   const start = process.threadCpuUsage();
-  const tree = parser.parse(source);
+  for (let repetition = 0; repetition < repetitions; repetition++) {
+    const tree = parser.parse(source);
+    if (!tree) throw new Error('The parser returned no tree');
+    const { hasError } = tree.rootNode;
+    tree.delete();
+    expect(hasError).toBe(expectedError);
+  }
   const { system, user } = process.threadCpuUsage(start);
-  if (!tree) throw new Error('The parser returned no tree');
-  const { hasError } = tree.rootNode;
-  tree.delete();
-  expect(hasError).toBe(expectedError);
   return system + user;
 }
