@@ -45,7 +45,7 @@ for (const [grammar, prefix] of Object.entries(Prefixes)) {
         parseCpuTime(parser, large, false);
         parseCpuTime(parser, large, false);
         let repetitions = 1;
-        while (parseCpuTime(parser, small, false, repetitions) < 50_000) {
+        while (parseCpuTime(parser, small, false, repetitions) < 10_000) {
           repetitions *= 2;
         }
         let smallFastest = Infinity;
