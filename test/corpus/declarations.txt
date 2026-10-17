@@ -159,6 +159,10 @@ use Foo\Bar\{
     const QUX as QUUX
 };
 
+use \Foo\{Bar, Baz};
+use function \Foo\{bar};
+use const \Foo\{BAR};
+
 ---
 
 (program
@@ -272,7 +276,27 @@ use Foo\Bar\{
         (name))
       (namespace_use_clause
         (name)
-        alias: (name)))))
+        alias: (name))))
+  (namespace_use_declaration
+    (namespace_name
+      (name))
+    body: (namespace_use_group
+      (namespace_use_clause
+        (name))
+      (namespace_use_clause
+        (name))))
+  (namespace_use_declaration
+    (namespace_name
+      (name))
+    body: (namespace_use_group
+      (namespace_use_clause
+        (name))))
+  (namespace_use_declaration
+    (namespace_name
+      (name))
+    body: (namespace_use_group
+      (namespace_use_clause
+        (name)))))
 
 ==========================
 Namespace names in namespaces
