@@ -2766,29 +2766,26 @@
         {
           "type": "REPEAT1",
           "content": {
-            "type": "FIELD",
-            "name": "visibility",
-            "content": {
-              "type": "SYMBOL",
-              "name": "visibility_modifier"
-            }
-          }
-        },
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "FIELD",
-              "name": "readonly",
-              "content": {
-                "type": "SYMBOL",
-                "name": "readonly_modifier"
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "FIELD",
+                "name": "visibility",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "visibility_modifier"
+                }
+              },
+              {
+                "type": "FIELD",
+                "name": "readonly",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "readonly_modifier"
+                }
               }
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
+            ]
+          }
         },
         {
           "type": "CHOICE",
