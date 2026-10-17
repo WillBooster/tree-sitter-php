@@ -10,7 +10,8 @@ PHP grammars for [tree-sitter](https://github.com/tree-sitter/tree-sitter), fork
 [tree-sitter/tree-sitter-php](https://github.com/tree-sitter/tree-sitter-php). We are grateful
 to its authors and contributors. This is not an official release of that project.
 
-This fork builds on upstream's version 0.24.2 grammars and queries with support for absolute grouped namespace imports.
+This fork builds on upstream's version 0.24.2 grammars and queries with support for absolute grouped namespace imports
+and asymmetric visibility in constructor property promotion.
 Its external scanner adapts to the generated array API and fixes incremental heredoc parsing. It generates the parsers with the
 [WillBooster/tree-sitter](https://github.com/WillBooster/tree-sitter) generator. The parsers carry that fork's own ABI
 number, so they load only with its runtime (`willbooster-tree-sitter`, `@willbooster/web-tree-sitter`), version 2.0.0

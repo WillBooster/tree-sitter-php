@@ -4188,7 +4188,7 @@
         ]
       },
       "readonly": {
-        "multiple": false,
+        "multiple": true,
         "required": false,
         "types": [
           {
@@ -4208,8 +4208,8 @@
         ]
       },
       "visibility": {
-        "multiple": false,
-        "required": true,
+        "multiple": true,
+        "required": false,
         "types": [
           {
             "type": "visibility_modifier",
