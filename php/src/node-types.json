@@ -1338,11 +1338,6 @@
     }
   },
   {
-    "type": "cast_type",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "catch_clause",
     "named": true,
     "fields": {
@@ -5839,6 +5834,10 @@
   {
     "type": "case",
     "named": false
+  },
+  {
+    "type": "cast_type",
+    "named": true
   },
   {
     "type": "catch",

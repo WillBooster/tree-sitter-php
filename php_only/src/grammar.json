@@ -700,66 +700,6 @@
           "value": "name"
         },
         {
-          "type": "ALIAS",
-          "content": {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "PATTERN",
-                "value": "binary",
-                "flags": "i"
-              },
-              {
-                "type": "PATTERN",
-                "value": "bool",
-                "flags": "i"
-              },
-              {
-                "type": "PATTERN",
-                "value": "boolean",
-                "flags": "i"
-              },
-              {
-                "type": "PATTERN",
-                "value": "double",
-                "flags": "i"
-              },
-              {
-                "type": "PATTERN",
-                "value": "float",
-                "flags": "i"
-              },
-              {
-                "type": "PATTERN",
-                "value": "int",
-                "flags": "i"
-              },
-              {
-                "type": "PATTERN",
-                "value": "integer",
-                "flags": "i"
-              },
-              {
-                "type": "PATTERN",
-                "value": "object",
-                "flags": "i"
-              },
-              {
-                "type": "PATTERN",
-                "value": "real",
-                "flags": "i"
-              },
-              {
-                "type": "PATTERN",
-                "value": "string",
-                "flags": "i"
-              }
-            ]
-          },
-          "named": true,
-          "value": "name"
-        },
-        {
           "type": "RESERVED",
           "content": {
             "type": "SYMBOL",
@@ -3341,69 +3281,93 @@
       ]
     },
     "cast_type": {
-      "type": "CHOICE",
-      "members": [
-        {
-          "type": "PATTERN",
-          "value": "array",
-          "flags": "i"
-        },
-        {
-          "type": "PATTERN",
-          "value": "binary",
-          "flags": "i"
-        },
-        {
-          "type": "PATTERN",
-          "value": "bool",
-          "flags": "i"
-        },
-        {
-          "type": "PATTERN",
-          "value": "boolean",
-          "flags": "i"
-        },
-        {
-          "type": "PATTERN",
-          "value": "double",
-          "flags": "i"
-        },
-        {
-          "type": "PATTERN",
-          "value": "float",
-          "flags": "i"
-        },
-        {
-          "type": "PATTERN",
-          "value": "int",
-          "flags": "i"
-        },
-        {
-          "type": "PATTERN",
-          "value": "integer",
-          "flags": "i"
-        },
-        {
-          "type": "PATTERN",
-          "value": "object",
-          "flags": "i"
-        },
-        {
-          "type": "PATTERN",
-          "value": "real",
-          "flags": "i"
-        },
-        {
-          "type": "PATTERN",
-          "value": "string",
-          "flags": "i"
-        },
-        {
-          "type": "PATTERN",
-          "value": "unset",
-          "flags": "i"
-        }
-      ]
+      "type": "TOKEN",
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "("
+          },
+          {
+            "type": "PATTERN",
+            "value": "[ \\t]*"
+          },
+          {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "PATTERN",
+                "value": "array",
+                "flags": "i"
+              },
+              {
+                "type": "PATTERN",
+                "value": "binary",
+                "flags": "i"
+              },
+              {
+                "type": "PATTERN",
+                "value": "bool",
+                "flags": "i"
+              },
+              {
+                "type": "PATTERN",
+                "value": "boolean",
+                "flags": "i"
+              },
+              {
+                "type": "PATTERN",
+                "value": "double",
+                "flags": "i"
+              },
+              {
+                "type": "PATTERN",
+                "value": "float",
+                "flags": "i"
+              },
+              {
+                "type": "PATTERN",
+                "value": "int",
+                "flags": "i"
+              },
+              {
+                "type": "PATTERN",
+                "value": "integer",
+                "flags": "i"
+              },
+              {
+                "type": "PATTERN",
+                "value": "object",
+                "flags": "i"
+              },
+              {
+                "type": "PATTERN",
+                "value": "real",
+                "flags": "i"
+              },
+              {
+                "type": "PATTERN",
+                "value": "string",
+                "flags": "i"
+              },
+              {
+                "type": "PATTERN",
+                "value": "unset",
+                "flags": "i"
+              }
+            ]
+          },
+          {
+            "type": "PATTERN",
+            "value": "[ \\t]*"
+          },
+          {
+            "type": "STRING",
+            "value": ")"
+          }
+        ]
+      }
     },
     "_return_type": {
       "type": "SEQ",
@@ -3548,7 +3512,13 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "STRING",
+          "type": "ALIAS",
+          "content": {
+            "type": "PATTERN",
+            "value": "unset",
+            "flags": "i"
+          },
+          "named": false,
           "value": "unset"
         },
         {
@@ -5332,70 +5302,6 @@
           "name": "name"
         },
         {
-          "type": "PREC",
-          "value": -1,
-          "content": {
-            "type": "ALIAS",
-            "content": {
-              "type": "CHOICE",
-              "members": [
-                {
-                  "type": "PATTERN",
-                  "value": "binary",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "bool",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "boolean",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "double",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "float",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "int",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "integer",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "object",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "real",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "string",
-                  "flags": "i"
-                }
-              ]
-            },
-            "named": true,
-            "value": "name"
-          }
-        },
-        {
           "type": "SYMBOL",
           "name": "array_creation_expression"
         },
@@ -5773,20 +5679,12 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "STRING",
-            "value": "("
-          },
-          {
             "type": "FIELD",
             "name": "type",
             "content": {
               "type": "SYMBOL",
               "name": "cast_type"
             }
-          },
-          {
-            "type": "STRING",
-            "value": ")"
           },
           {
             "type": "FIELD",
@@ -5823,20 +5721,12 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "STRING",
-            "value": "("
-          },
-          {
             "type": "FIELD",
             "name": "type",
             "content": {
               "type": "SYMBOL",
               "name": "cast_type"
             }
-          },
-          {
-            "type": "STRING",
-            "value": ")"
           },
           {
             "type": "FIELD",
@@ -6887,61 +6777,6 @@
                 },
                 {
                   "type": "PATTERN",
-                  "value": "binary",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "bool",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "boolean",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "double",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "float",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "int",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "integer",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "object",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "real",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "string",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "unset",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
                   "value": "fn",
                   "flags": "i"
                 },
@@ -6973,6 +6808,11 @@
                 {
                   "type": "PATTERN",
                   "value": "throw",
+                  "flags": "i"
+                },
+                {
+                  "type": "PATTERN",
+                  "value": "unset",
                   "flags": "i"
                 },
                 {
@@ -10105,6 +9945,11 @@
       },
       {
         "type": "PATTERN",
+        "value": "unset",
+        "flags": "i"
+      },
+      {
+        "type": "PATTERN",
         "value": "use",
         "flags": "i"
       },
@@ -10417,6 +10262,11 @@
       },
       {
         "type": "PATTERN",
+        "value": "unset",
+        "flags": "i"
+      },
+      {
+        "type": "PATTERN",
         "value": "use",
         "flags": "i"
       },
@@ -10446,9 +10296,8 @@
         "flags": "i"
       },
       {
-        "type": "PATTERN",
-        "value": "bool",
-        "flags": "i"
+        "type": "STRING",
+        "value": "bool"
       },
       {
         "type": "PATTERN",
@@ -10456,14 +10305,12 @@
         "flags": "i"
       },
       {
-        "type": "PATTERN",
-        "value": "float",
-        "flags": "i"
+        "type": "STRING",
+        "value": "float"
       },
       {
-        "type": "PATTERN",
-        "value": "int",
-        "flags": "i"
+        "type": "STRING",
+        "value": "int"
       },
       {
         "type": "PATTERN",
@@ -10486,14 +10333,12 @@
         "flags": "i"
       },
       {
-        "type": "PATTERN",
-        "value": "object",
-        "flags": "i"
+        "type": "STRING",
+        "value": "object"
       },
       {
-        "type": "PATTERN",
-        "value": "string",
-        "flags": "i"
+        "type": "STRING",
+        "value": "string"
       },
       {
         "type": "PATTERN",

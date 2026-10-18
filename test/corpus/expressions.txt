@@ -2775,3 +2775,231 @@ foo(Binary::class);
           (class_constant_access_expression
             (name)
             (name)))))))
+
+===============================================
+Cast names retain ordinary identifier contexts
+===============================================
+
+<?php
+namespace Object\String;
+use Float\Integer as Real;
+use function Double\Binary\real;
+$a = real\foo();
+$b = Object\Bar::X;
+$c = new Object\Bar();
+foo(String\Helper::make());
+$d = $x instanceof Object\Bar;
+$e = Integer\VALUE;
+foo(object: $a, binary: 1, real: 2);
+function real(Object\Bar $object): String\Helper { return $object; }
+class Binary extends Object\Bar implements Float\Contract {
+  public Object\Bar $object;
+  public function real() { return $this->object; }
+}
+real: goto real;
+$int = $object->real;
+clone(object: $a, withProperties: []);
+$x = ( InT ) $int;
+$y = (object) $a;
+foo((/* comment */OBJECT), (OBJECT/* comment */));
+
+---
+
+(program
+  (php_tag)
+  (namespace_definition
+    (namespace_name
+      (name)
+      (name)))
+  (namespace_use_declaration
+    (namespace_use_clause
+      (qualified_name
+        (namespace_name
+          (name))
+        (name))
+      (name)))
+  (namespace_use_declaration
+    (namespace_use_clause
+      (qualified_name
+        (namespace_name
+          (name)
+          (name))
+        (name))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (function_call_expression
+        (qualified_name
+          (namespace_name
+            (name))
+          (name))
+        (arguments))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (class_constant_access_expression
+        (qualified_name
+          (namespace_name
+            (name))
+          (name))
+        (name))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (object_creation_expression
+        (qualified_name
+          (namespace_name
+            (name))
+          (name))
+        (arguments))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (scoped_call_expression
+            (qualified_name
+              (namespace_name
+                (name))
+              (name))
+            (name)
+            (arguments))))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (binary_expression
+        (variable_name
+          (name))
+        (qualified_name
+          (namespace_name
+            (name))
+          (name)))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (qualified_name
+        (namespace_name
+          (name))
+        (name))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (name)
+          (variable_name
+            (name)))
+        (argument
+          (name)
+          (integer))
+        (argument
+          (name)
+          (integer)))))
+  (function_definition
+    (name)
+    (formal_parameters
+      (simple_parameter
+        (named_type
+          (qualified_name
+            (namespace_name
+              (name))
+            (name)))
+        (variable_name
+          (name))))
+    (named_type
+      (qualified_name
+        (namespace_name
+          (name))
+        (name)))
+    (compound_statement
+      (return_statement
+        (variable_name
+          (name)))))
+  (class_declaration
+    (name)
+    (base_clause
+      (qualified_name
+        (namespace_name
+          (name))
+        (name)))
+    (class_interface_clause
+      (qualified_name
+        (namespace_name
+          (name))
+        (name)))
+    (declaration_list
+      (property_declaration
+        (visibility_modifier)
+        (named_type
+          (qualified_name
+            (namespace_name
+              (name))
+            (name)))
+        (property_element
+          (variable_name
+            (name))))
+      (method_declaration
+        (visibility_modifier)
+        (name)
+        (formal_parameters)
+        (compound_statement
+          (return_statement
+            (member_access_expression
+              (variable_name
+                (name))
+              (name)))))))
+  (named_label_statement
+    (name))
+  (goto_statement
+    (name))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (member_access_expression
+        (variable_name
+          (name))
+        (name))))
+  (expression_statement
+    (clone_expression
+      (arguments
+        (argument
+          (name)
+          (variable_name
+            (name)))
+        (argument
+          (name)
+          (array_creation_expression)))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (cast_expression
+        (cast_type)
+        (variable_name
+          (name)))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (cast_expression
+        (cast_type)
+        (variable_name
+          (name)))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (parenthesized_expression
+            (comment)
+            (name)))
+        (argument
+          (parenthesized_expression
+            (name)
+            (comment)))))))

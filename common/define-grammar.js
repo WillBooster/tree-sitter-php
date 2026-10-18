@@ -57,7 +57,7 @@ const BASE_RESERVED_KEYWORD_SET = [
   'instanceof', 'insteadof', 'interface', 'match', 'namespace', 'new',
   'or', 'print', 'private', 'protected', 'public', 'readonly',
   'require', 'require_once', 'return', 'static', 'switch', 'throw',
-  'trait', 'try', 'use', 'var', 'while', 'xor', 'yield from', 'yield',
+  'trait', 'try', 'unset', 'use', 'var', 'while', 'xor', 'yield from', 'yield',
 ].map(r => keyword(r, false));
 
 /**
@@ -68,14 +68,12 @@ const BASE_RESERVED_KEYWORD_SET = [
 const OTHER_RESERVED_KEYWORD_SET = [
   'bool', 'false', 'float', 'int', 'iterable', 'mixed',
   'never', 'null', 'object', 'string', 'true', 'void',
-].map(r => keyword(r, false));
+].map(r => ['bool', 'float', 'int', 'object', 'string'].includes(r) ? r : keyword(r, false));
 
 const CAST_TYPES = [
   'array', 'binary', 'bool', 'boolean', 'double', 'float',
   'int', 'integer', 'object', 'real', 'string', 'unset',
 ];
-
-const CAST_TYPE_IDENTIFIERS = CAST_TYPES.filter(type => !['array', 'unset'].includes(type));
 
 module.exports = function defineGrammar(dialect) {
   if (dialect !== 'php' && dialect !== 'php_only') {
@@ -286,7 +284,6 @@ module.exports = function defineGrammar(dialect) {
 
       _name: $ => choice(
         alias(keyword('static', false), $.name),
-        alias(choice(...CAST_TYPE_IDENTIFIERS.map(type => keyword(type, false))), $.name),
         reserved('classes', $.name),
         $.qualified_name,
         $.relative_name,
@@ -652,7 +649,7 @@ module.exports = function defineGrammar(dialect) {
         keyword('void', false),
       ),
 
-      cast_type: _ => choice(...CAST_TYPES.map(type => keyword(type, false))),
+      cast_type: _ => token(seq('(', /[ \t]*/, choice(...CAST_TYPES.map(type => new RegExp(type, 'i'))), /[ \t]*/, ')')),
 
       _return_type: $ => seq(':', field('return_type', choice($.type, $.bottom_type))),
 
@@ -668,7 +665,7 @@ module.exports = function defineGrammar(dialect) {
       ),
 
       unset_statement: $ => seq(
-        'unset',
+        keyword('unset'),
         '(',
         commaSep1($._variable),
         optional(','),
@@ -1009,10 +1006,6 @@ module.exports = function defineGrammar(dialect) {
         $.qualified_name,
         $.relative_name,
         $.name,
-        prec(-1, alias(
-          choice(...CAST_TYPE_IDENTIFIERS.map(type => keyword(type, false))),
-          $.name,
-        )),
         $.array_creation_expression,
         $.print_intrinsic,
         $.anonymous_function,
@@ -1083,9 +1076,7 @@ module.exports = function defineGrammar(dialect) {
       },
 
       cast_expression: $ => prec(PREC.CAST, seq(
-        '(',
         field('type', $.cast_type),
-        ')',
         field('value', choice(
           $._unary_expression,
           $.include_expression,
@@ -1095,7 +1086,7 @@ module.exports = function defineGrammar(dialect) {
       )),
 
       cast_variable: $ => prec(PREC.CAST, seq(
-        '(', field('type', $.cast_type), ')',
+        field('type', $.cast_type),
         field('value', $._variable),
       )),
 
@@ -1294,7 +1285,7 @@ module.exports = function defineGrammar(dialect) {
         field('name', alias(
           choice(
             reserved('nothing', $.name),
-            ...CAST_TYPES.map(type => keyword(type, false)),
+            keyword('array', false),
             keyword('fn', false),
             keyword('function', false),
             keyword('match', false),
@@ -1302,6 +1293,7 @@ module.exports = function defineGrammar(dialect) {
             keyword('null', false),
             keyword('static', false),
             keyword('throw', false),
+            keyword('unset', false),
             keyword('parent', false),
             keyword('self', false),
             /true|false/i,
