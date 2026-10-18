@@ -302,16 +302,18 @@ module.exports = function defineGrammar(dialect) {
 
       _class_const_qualified_name: $ => seq(
         field('prefix', seq(optional('\\'), optional(alias($._class_const_namespace_name, $.namespace_name)), '\\')),
-        $._unreserved_identifier,
+        $._class_const_namespace_identifier,
       ),
 
       _class_const_namespace_name: $ => seq(
-        choice(
-          $._unreserved_identifier,
-          alias($._static_type, $.name),
-          alias(choice(...BASE_RESERVED_KEYWORDS.filter(word => !['namespace', 'static', 'yield from'].includes(word)).map(word => keyword(word, false))), $.name),
-        ),
-        repeat(seq('\\', $._unreserved_identifier)),
+        $._class_const_namespace_identifier,
+        repeat(seq('\\', $._class_const_namespace_identifier)),
+      ),
+
+      _class_const_namespace_identifier: $ => choice(
+        $._unreserved_identifier,
+        alias($._static_type, $.name),
+        alias(choice(...BASE_RESERVED_KEYWORDS.filter(word => !['namespace', 'static', 'yield from'].includes(word)).map(word => keyword(word, false))), $.name),
       ),
 
       namespace_name: $ => seq(

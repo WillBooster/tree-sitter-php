@@ -17,6 +17,10 @@ testCommand(
         ['named', 'static'],
         ['type', String.raw`if\X`],
         ['named', String.raw`if\X`],
+        ['type', String.raw`\if`],
+        ['named', String.raw`\if`],
+        ['type', String.raw`\class\if\static`],
+        ['named', String.raw`\class\if\static`],
         ['type', 'int'],
       ]);
     },
