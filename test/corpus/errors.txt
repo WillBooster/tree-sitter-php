@@ -209,3 +209,25 @@ const FALSE = 1;
 ---
 
 (ERROR)
+
+==================
+Static-leading union property type
+:error
+==================
+
+<?php class C { public static|int $x; }
+
+---
+
+(ERROR)
+
+==================
+Static-leading intersection property type
+:error
+==================
+
+<?php class C { public STATIC&A $x; }
+
+---
+
+(ERROR)

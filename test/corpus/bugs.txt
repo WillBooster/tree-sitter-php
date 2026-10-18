@@ -524,3 +524,76 @@ enum Status { const static VALUE = OTHER; }
         (const_element
           (name)
           (name))))))
+
+=========================================
+Keyword prefixes in constant types
+=========================================
+
+<?php
+class C {
+    public const if\X A = 1;
+    public const static\X B = 1;
+    public const (CLASS\X&Other)|static C = 1;
+}
+function f(static\X $x): static\X {}
+
+---
+
+(program
+  (php_tag)
+  (class_declaration
+    (name)
+    (declaration_list
+      (const_declaration
+        (visibility_modifier)
+        (named_type
+          (qualified_name
+            (namespace_name
+              (name))
+            (name)))
+        (const_element
+          (name)
+          (integer)))
+      (const_declaration
+        (visibility_modifier)
+        (named_type
+          (qualified_name
+            (namespace_name
+              (name))
+            (name)))
+        (const_element
+          (name)
+          (integer)))
+      (const_declaration
+        (visibility_modifier)
+        (disjunctive_normal_form_type
+          (intersection_type
+            (named_type
+              (qualified_name
+                (namespace_name
+                  (name))
+                (name)))
+            (named_type
+              (name)))
+          (named_type
+            (name)))
+        (const_element
+          (name)
+          (integer)))))
+  (function_definition
+    (name)
+    (formal_parameters
+      (simple_parameter
+        (named_type
+          (qualified_name
+            (namespace_name
+              (name))
+            (name)))
+        (variable_name
+          (name))))
+    (named_type
+      (qualified_name
+        (namespace_name
+          (name))
+        (name)))
+    (compound_statement)))
