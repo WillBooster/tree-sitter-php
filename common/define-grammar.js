@@ -618,7 +618,10 @@ module.exports = function defineGrammar(dialect) {
         $.primitive_type,
       ),
 
+      _static_type: _ => prec(-1, keyword('static', false)),
+
       named_type: $ => choice(
+        alias($._static_type, $.name),
         reserved('classes', $.name),
         $.qualified_name,
         $.relative_name,
@@ -671,7 +674,8 @@ module.exports = function defineGrammar(dialect) {
         choice(
           reserved('nothing', $.name),
           alias($.primitive_type, $.name),
-          alias(choice(...BASE_RESERVED_KEYWORDS.filter(word => !['callable', 'yield from'].includes(word)).map(word => keyword(word, false))), $.name),
+          alias($._static_type, $.name),
+          alias(choice(...BASE_RESERVED_KEYWORDS.filter(word => !['callable', 'static', 'yield from'].includes(word)).map(word => keyword(word, false))), $.name),
         ),
         '=',
         $.expression,

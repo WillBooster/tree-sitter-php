@@ -437,3 +437,90 @@ const bool = 1, float = 2, int = 3, object = 4, string = 5;
     (const_element
       (name)
       (integer))))
+
+=========================================
+Static constant types and names
+=========================================
+
+<?php
+class Typed {
+    public const static VALUE = OTHER;
+    public const ?static OPTIONAL = null;
+    public const static|Other CHOICE = OTHER;
+    const static = 1;
+    const static STATIC = OTHER;
+}
+interface Contract { const STATIC VALUE = OTHER; }
+trait Shared { public const Static VALUE = OTHER; }
+enum Status { const static VALUE = OTHER; }
+
+---
+
+(program
+  (php_tag)
+  (class_declaration
+    (name)
+    (declaration_list
+      (const_declaration
+        (visibility_modifier)
+        (named_type
+          (name))
+        (const_element
+          (name)
+          (name)))
+      (const_declaration
+        (visibility_modifier)
+        (optional_type
+          (named_type
+            (name)))
+        (const_element
+          (name)
+          (null)))
+      (const_declaration
+        (visibility_modifier)
+        (union_type
+          (named_type
+            (name))
+          (named_type
+            (name)))
+        (const_element
+          (name)
+          (name)))
+      (const_declaration
+        (const_element
+          (name)
+          (integer)))
+      (const_declaration
+        (named_type
+          (name))
+        (const_element
+          (name)
+          (name)))))
+  (interface_declaration
+    (name)
+    (declaration_list
+      (const_declaration
+        (named_type
+          (name))
+        (const_element
+          (name)
+          (name)))))
+  (trait_declaration
+    (name)
+    (declaration_list
+      (const_declaration
+        (visibility_modifier)
+        (named_type
+          (name))
+        (const_element
+          (name)
+          (name)))))
+  (enum_declaration
+    (name)
+    (enum_declaration_list
+      (const_declaration
+        (named_type
+          (name))
+        (const_element
+          (name)
+          (name))))))
