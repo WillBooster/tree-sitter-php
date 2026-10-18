@@ -75,6 +75,8 @@ const CAST_TYPES = [
   'int', 'integer', 'object', 'real', 'string', 'unset',
 ];
 
+const CAST_TYPE_IDENTIFIERS = CAST_TYPES.filter(type => !['array', 'unset'].includes(type));
+
 module.exports = function defineGrammar(dialect) {
   if (dialect !== 'php' && dialect !== 'php_only') {
     throw new Error(`Unknown dialect ${dialect}`);
@@ -284,6 +286,7 @@ module.exports = function defineGrammar(dialect) {
 
       _name: $ => choice(
         alias(keyword('static', false), $.name),
+        alias(choice(...CAST_TYPE_IDENTIFIERS.map(type => keyword(type, false))), $.name),
         reserved('classes', $.name),
         $.qualified_name,
         $.relative_name,
@@ -1006,6 +1009,10 @@ module.exports = function defineGrammar(dialect) {
         $.qualified_name,
         $.relative_name,
         $.name,
+        prec(-1, alias(
+          choice(...CAST_TYPE_IDENTIFIERS.map(type => keyword(type, false))),
+          $.name,
+        )),
         $.array_creation_expression,
         $.print_intrinsic,
         $.anonymous_function,
@@ -1280,10 +1287,6 @@ module.exports = function defineGrammar(dialect) {
           $.variadic_unpacking,
           $.expression,
           $.argument_placeholder,
-          prec(-1, alias(
-            choice(...CAST_TYPES.map(type => keyword(type, false))),
-            $.name,
-          )),
         ),
       ),
 

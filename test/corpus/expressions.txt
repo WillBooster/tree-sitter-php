@@ -2708,3 +2708,70 @@ foo(
         (argument (argument_placeholder))
         (argument (integer))
         (variadic_placeholder)))))
+
+===============================================
+Cast-type identifiers in argument expressions
+===============================================
+
+<?php
+foo(OBJECT | 1);
+foo(INT + 1);
+foo(STRING . 'x');
+foo(Object::class);
+foo(Real::make());
+foo(Binary::class);
+
+---
+
+(program
+  (php_tag)
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (binary_expression
+            (name)
+            (integer))))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (binary_expression
+            (name)
+            (integer))))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (binary_expression
+            (name)
+            (string
+              (string_content)))))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (class_constant_access_expression
+            (name)
+            (name))))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (scoped_call_expression
+            (name)
+            (name)
+            (arguments))))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (class_constant_access_expression
+            (name)
+            (name)))))))

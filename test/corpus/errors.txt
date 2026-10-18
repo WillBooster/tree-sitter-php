@@ -41,3 +41,27 @@ class Example {
               (name))
             (compound_statement))
           (comment))))))
+
+===============================================
+Reserved cast keywords are not argument values
+:error
+===============================================
+
+<?php
+foo(array);
+
+---
+
+(ERROR)
+
+===============================================
+Unset is not an argument value
+:error
+===============================================
+
+<?php
+foo(unset);
+
+---
+
+(ERROR)
