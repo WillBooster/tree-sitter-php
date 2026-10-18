@@ -3183,3 +3183,130 @@ class C {
               (name)
               (name))
             (name)))))))
+
+====================
+Reserved unset namespace paths in expression contexts
+====================
+
+<?php
+foo(unset\X());
+foo(UNSET\X(), unset\VALUE, unset\Type::VALUE);
+$a = unset\X();
+return unset\X();
+if (unset\X()) { echo unset\VALUE; }
+foo(new unset\Type(), $a instanceof unset\Type);
+foo(\unset\X(), X\unset(), namespace\unset\X());
+
+---
+
+(program
+  (php_tag)
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (function_call_expression
+            (qualified_name
+              (namespace_name
+                (name))
+              (name))
+            (arguments))))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (function_call_expression
+            (qualified_name
+              (namespace_name
+                (name))
+              (name))
+            (arguments)))
+        (argument
+          (qualified_name
+            (namespace_name
+              (name))
+            (name)))
+        (argument
+          (class_constant_access_expression
+            (qualified_name
+              (namespace_name
+                (name))
+              (name))
+            (name))))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (function_call_expression
+        (qualified_name
+          (namespace_name
+            (name))
+          (name))
+        (arguments))))
+  (return_statement
+    (function_call_expression
+      (qualified_name
+        (namespace_name
+          (name))
+        (name))
+      (arguments)))
+  (if_statement
+    (parenthesized_expression
+      (function_call_expression
+        (qualified_name
+          (namespace_name
+            (name))
+          (name))
+        (arguments)))
+    (compound_statement
+      (echo_statement
+        (qualified_name
+          (namespace_name
+            (name))
+          (name)))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (object_creation_expression
+            (qualified_name
+              (namespace_name
+                (name))
+              (name))
+            (arguments)))
+        (argument
+          (binary_expression
+            (variable_name
+              (name))
+            (qualified_name
+              (namespace_name
+                (name))
+              (name)))))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (function_call_expression
+            (qualified_name
+              (namespace_name
+                (name))
+              (name))
+            (arguments)))
+        (argument
+          (function_call_expression
+            (qualified_name
+              (namespace_name
+                (name))
+              (name))
+            (arguments)))
+        (argument
+          (function_call_expression
+            (relative_name
+              (namespace_name
+                (name))
+              (name))
+            (arguments)))))))

@@ -6861,11 +6861,6 @@
                 },
                 {
                   "type": "PATTERN",
-                  "value": "unset",
-                  "flags": "i"
-                },
-                {
-                  "type": "PATTERN",
                   "value": "parent",
                   "flags": "i"
                 },
@@ -9541,6 +9536,11 @@
               {
                 "type": "PATTERN",
                 "value": "string",
+                "flags": "i"
+              },
+              {
+                "type": "PATTERN",
+                "value": "unset",
                 "flags": "i"
               }
             ]
