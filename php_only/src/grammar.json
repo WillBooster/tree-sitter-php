@@ -4897,8 +4897,22 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "SYMBOL",
-          "name": "named_type"
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "named_type"
+            },
+            {
+              "type": "ALIAS",
+              "content": {
+                "type": "SYMBOL",
+                "name": "_catch_type_keyword"
+              },
+              "named": true,
+              "value": "named_type"
+            }
+          ]
         },
         {
           "type": "REPEAT",
@@ -4910,13 +4924,62 @@
                 "value": "|"
               },
               {
-                "type": "SYMBOL",
-                "name": "named_type"
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "SYMBOL",
+                    "name": "named_type"
+                  },
+                  {
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "SYMBOL",
+                      "name": "_catch_type_keyword"
+                    },
+                    "named": true,
+                    "value": "named_type"
+                  }
+                ]
               }
             ]
           }
         }
       ]
+    },
+    "_catch_type_keyword": {
+      "type": "ALIAS",
+      "content": {
+        "type": "CHOICE",
+        "members": [
+          {
+            "type": "PATTERN",
+            "value": "bool",
+            "flags": "i"
+          },
+          {
+            "type": "PATTERN",
+            "value": "float",
+            "flags": "i"
+          },
+          {
+            "type": "PATTERN",
+            "value": "int",
+            "flags": "i"
+          },
+          {
+            "type": "PATTERN",
+            "value": "object",
+            "flags": "i"
+          },
+          {
+            "type": "PATTERN",
+            "value": "string",
+            "flags": "i"
+          }
+        ]
+      },
+      "named": true,
+      "value": "name"
     },
     "finally_clause": {
       "type": "SEQ",

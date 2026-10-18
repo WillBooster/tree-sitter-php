@@ -797,7 +797,12 @@ module.exports = function defineGrammar(dialect) {
         field('body', $.compound_statement),
       ),
 
-      type_list: $ => pipeSep1($.named_type),
+      type_list: $ => pipeSep1(choice(
+        $.named_type,
+        alias($._catch_type_keyword, $.named_type),
+      )),
+
+      _catch_type_keyword: $ => alias(choice(...IDENTIFIER_TYPE_KEYWORDS), $.name),
 
       finally_clause: $ => seq(
         keyword('finally'),
