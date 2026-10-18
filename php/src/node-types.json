@@ -6029,6 +6029,10 @@
     "named": false
   },
   {
+    "type": "operation",
+    "named": true
+  },
+  {
     "type": "or",
     "named": false
   },

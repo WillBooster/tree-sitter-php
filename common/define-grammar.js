@@ -508,7 +508,10 @@ module.exports = function defineGrammar(dialect) {
         ),
         optional(seq(
           token.immediate('('),
-          alias($._identifier, $.operation),
+          choice(
+            alias($.name, $.operation),
+            alias(choice(...IDENTIFIER_TYPE_KEYWORDS), $.operation),
+          ),
           token.immediate(')'),
         )),
       ),

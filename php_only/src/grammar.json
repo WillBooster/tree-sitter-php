@@ -2269,13 +2269,53 @@
                   }
                 },
                 {
-                  "type": "ALIAS",
-                  "content": {
-                    "type": "SYMBOL",
-                    "name": "_identifier"
-                  },
-                  "named": true,
-                  "value": "operation"
+                  "type": "CHOICE",
+                  "members": [
+                    {
+                      "type": "ALIAS",
+                      "content": {
+                        "type": "SYMBOL",
+                        "name": "name"
+                      },
+                      "named": true,
+                      "value": "operation"
+                    },
+                    {
+                      "type": "ALIAS",
+                      "content": {
+                        "type": "CHOICE",
+                        "members": [
+                          {
+                            "type": "PATTERN",
+                            "value": "bool",
+                            "flags": "i"
+                          },
+                          {
+                            "type": "PATTERN",
+                            "value": "float",
+                            "flags": "i"
+                          },
+                          {
+                            "type": "PATTERN",
+                            "value": "int",
+                            "flags": "i"
+                          },
+                          {
+                            "type": "PATTERN",
+                            "value": "object",
+                            "flags": "i"
+                          },
+                          {
+                            "type": "PATTERN",
+                            "value": "string",
+                            "flags": "i"
+                          }
+                        ]
+                      },
+                      "named": true,
+                      "value": "operation"
+                    }
+                  ]
                 },
                 {
                   "type": "IMMEDIATE_TOKEN",
