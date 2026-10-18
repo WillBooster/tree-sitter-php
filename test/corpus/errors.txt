@@ -161,3 +161,51 @@ enum STRING {}
 ---
 
 (ERROR)
+
+===============================================
+Reserved global constant name CALLABLE
+:error
+===============================================
+
+<?php
+const CALLABLE = 1;
+
+---
+
+(ERROR)
+
+===============================================
+Reserved global constant name NAMESPACE
+:error
+===============================================
+
+<?php
+const NAMESPACE = 1;
+
+---
+
+(ERROR)
+
+===============================================
+Reserved global constant name TRUE
+:error
+===============================================
+
+<?php
+const TRUE = 1;
+
+---
+
+(ERROR)
+
+===============================================
+Reserved global constant name FALSE
+:error
+===============================================
+
+<?php
+const FALSE = 1;
+
+---
+
+(ERROR)
