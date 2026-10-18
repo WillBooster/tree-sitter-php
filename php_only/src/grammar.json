@@ -620,12 +620,8 @@
           }
         },
         {
-          "type": "RESERVED",
-          "content": {
-            "type": "SYMBOL",
-            "name": "name"
-          },
-          "context_name": "classes"
+          "type": "SYMBOL",
+          "name": "_unreserved_identifier"
         }
       ]
     },
@@ -677,12 +673,8 @@
           }
         },
         {
-          "type": "RESERVED",
-          "content": {
-            "type": "SYMBOL",
-            "name": "name"
-          },
-          "context_name": "classes"
+          "type": "SYMBOL",
+          "name": "_unreserved_identifier"
         }
       ]
     },

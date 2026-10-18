@@ -274,7 +274,7 @@ module.exports = function defineGrammar(dialect) {
 
       qualified_name: $ => seq(
         field('prefix', seq(optional('\\'), optional($.namespace_name), '\\')),
-        reserved('classes', $.name),
+        $._unreserved_identifier,
       ),
 
       relative_name: $ => seq(
@@ -283,7 +283,7 @@ module.exports = function defineGrammar(dialect) {
           optional(seq('\\', $.namespace_name)),
           '\\',
         )),
-        reserved('classes', $.name),
+        $._unreserved_identifier,
       ),
 
       _name: $ => choice(

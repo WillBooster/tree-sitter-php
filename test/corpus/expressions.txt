@@ -3003,3 +3003,121 @@ foo((/* comment */OBJECT), (OBJECT/* comment */));
           (parenthesized_expression
             (name)
             (comment)))))))
+
+====================
+Qualified type-word identifiers in imports, types, and attributes
+====================
+
+<?php
+use function Foo\Object;
+use const Foo\STRING;
+use Foo\Float;
+#[Foo\Object(1)]
+function f(?Object\Y $a, \Float $b, Foo\STRING $c): ?Float\Y {}
+function g(): namespace\INT {}
+class C extends Foo\Object implements Foo\STRING {
+    use Foo\Float;
+    public ?Object\Y $value;
+}
+
+---
+
+(program
+  (php_tag)
+  (namespace_use_declaration
+    (namespace_use_clause
+      (qualified_name
+        (namespace_name
+          (name))
+        (name))))
+  (namespace_use_declaration
+    (namespace_use_clause
+      (qualified_name
+        (namespace_name
+          (name))
+        (name))))
+  (namespace_use_declaration
+    (namespace_use_clause
+      (qualified_name
+        (namespace_name
+          (name))
+        (name))))
+  (function_definition
+    (attribute_list
+      (attribute_group
+        (attribute
+          (qualified_name
+            (namespace_name
+              (name))
+            (name))
+          (arguments
+            (argument
+              (integer))))))
+    (name)
+    (formal_parameters
+      (simple_parameter
+        (optional_type
+          (named_type
+            (qualified_name
+              (namespace_name
+                (name))
+              (name))))
+        (variable_name
+          (name)))
+      (simple_parameter
+        (named_type
+          (qualified_name
+            (name)))
+        (variable_name
+          (name)))
+      (simple_parameter
+        (named_type
+          (qualified_name
+            (namespace_name
+              (name))
+            (name)))
+        (variable_name
+          (name))))
+    (optional_type
+      (named_type
+        (qualified_name
+          (namespace_name
+            (name))
+          (name))))
+    (compound_statement))
+  (function_definition
+    (name)
+    (formal_parameters)
+    (named_type
+      (relative_name
+        (name)))
+    (compound_statement))
+  (class_declaration
+    (name)
+    (base_clause
+      (qualified_name
+        (namespace_name
+          (name))
+        (name)))
+    (class_interface_clause
+      (qualified_name
+        (namespace_name
+          (name))
+        (name)))
+    (declaration_list
+      (use_declaration
+        (qualified_name
+          (namespace_name
+            (name))
+          (name)))
+      (property_declaration
+        (visibility_modifier)
+        (optional_type
+          (named_type
+            (qualified_name
+              (namespace_name
+                (name))
+              (name))))
+        (property_element
+          (variable_name
+            (name)))))))
