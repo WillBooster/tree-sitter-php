@@ -5820,10 +5820,6 @@
     "named": false
   },
   {
-    "type": "bool",
-    "named": false
-  },
-  {
     "type": "bottom_type",
     "named": true
   },
@@ -5942,10 +5938,6 @@
   },
   {
     "type": "float",
-    "named": false
-  },
-  {
-    "type": "float",
     "named": true
   },
   {
@@ -6005,10 +5997,6 @@
     "named": false
   },
   {
-    "type": "int",
-    "named": false
-  },
-  {
     "type": "integer",
     "named": true
   },
@@ -6039,14 +6027,6 @@
   {
     "type": "null",
     "named": false
-  },
-  {
-    "type": "object",
-    "named": false
-  },
-  {
-    "type": "operation",
-    "named": true
   },
   {
     "type": "or",
@@ -6106,10 +6086,6 @@
   },
   {
     "type": "strict_types",
-    "named": false
-  },
-  {
-    "type": "string",
     "named": false
   },
   {
