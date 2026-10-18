@@ -1338,11 +1338,6 @@
     }
   },
   {
-    "type": "cast_type",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "catch_clause",
     "named": true,
     "fields": {
@@ -1581,10 +1576,21 @@
   {
     "type": "clone_expression",
     "named": true,
-    "fields": {},
+    "fields": {
+      "arguments": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "arguments",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
       "multiple": false,
-      "required": true,
+      "required": false,
       "types": [
         {
           "type": "primary_expression",
@@ -5785,10 +5791,6 @@
     "named": false
   },
   {
-    "type": "bool",
-    "named": false
-  },
-  {
     "type": "bottom_type",
     "named": true
   },
@@ -5799,6 +5801,10 @@
   {
     "type": "case",
     "named": false
+  },
+  {
+    "type": "cast_type",
+    "named": true
   },
   {
     "type": "catch",
@@ -5903,10 +5909,6 @@
   },
   {
     "type": "float",
-    "named": false
-  },
-  {
-    "type": "float",
     "named": true
   },
   {
@@ -5966,10 +5968,6 @@
     "named": false
   },
   {
-    "type": "int",
-    "named": false
-  },
-  {
     "type": "integer",
     "named": true
   },
@@ -5999,10 +5997,6 @@
   },
   {
     "type": "null",
-    "named": false
-  },
-  {
-    "type": "object",
     "named": false
   },
   {
@@ -6067,10 +6061,6 @@
   },
   {
     "type": "strict_types",
-    "named": false
-  },
-  {
-    "type": "string",
     "named": false
   },
   {

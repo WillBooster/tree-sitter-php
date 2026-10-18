@@ -1086,6 +1086,125 @@ $statement = match ($a) {
 )
 
 ===============================================
+Clone expressions
+===============================================
+
+<?php
+
+clone $a;
+clone($a);
+clone($a)->b();
+clone (object) $a;
+
+---
+
+(program
+  (php_tag)
+  (expression_statement
+    (clone_expression (variable_name (name))))
+  (expression_statement
+    (clone_expression (parenthesized_expression (variable_name (name)))))
+  (expression_statement
+    (clone_expression
+      (member_call_expression
+        object: (parenthesized_expression (variable_name (name)))
+        name: (name)
+        arguments: (arguments))))
+  (expression_statement
+    (clone_expression
+      (cast_expression
+        type: (cast_type)
+        value: (variable_name (name))))))
+
+===============================================
+Clone with arguments
+===============================================
+
+<?php
+
+clone($a, ['b' => 1]);
+clone($a, withProperties: ['b' => 1]);
+clone(object: $a, withProperties: ['b' => 1]);
+clone(withProperties: ['b' => 1], object: $a);
+clone(object: $a);
+clone($a,);
+clone(...$args);
+clone(...);
+clone();
+clone($a, ?);
+(clone($a, ['b' => 1]))->c();
+
+---
+
+(program
+  (php_tag)
+  (expression_statement
+    (clone_expression
+      arguments: (arguments
+        (argument (variable_name (name)))
+        (argument
+          (array_creation_expression
+            (array_element_initializer (string (string_content)) (integer)))))))
+  (expression_statement
+    (clone_expression
+      arguments: (arguments
+        (argument (variable_name (name)))
+        (argument
+          name: (name)
+          (array_creation_expression
+            (array_element_initializer (string (string_content)) (integer)))))))
+  (expression_statement
+    (clone_expression
+      arguments: (arguments
+        (argument name: (name) (variable_name (name)))
+        (argument
+          name: (name)
+          (array_creation_expression
+            (array_element_initializer (string (string_content)) (integer)))))))
+  (expression_statement
+    (clone_expression
+      arguments: (arguments
+        (argument
+          name: (name)
+          (array_creation_expression
+            (array_element_initializer (string (string_content)) (integer))))
+        (argument name: (name) (variable_name (name))))))
+  (expression_statement
+    (clone_expression
+      arguments: (arguments
+        (argument name: (name) (variable_name (name))))))
+  (expression_statement
+    (clone_expression
+      arguments: (arguments
+        (argument (variable_name (name))))))
+  (expression_statement
+    (clone_expression
+      arguments: (arguments
+        (argument (variadic_unpacking (variable_name (name)))))))
+  (expression_statement
+    (clone_expression
+      arguments: (arguments (variadic_placeholder))))
+  (expression_statement
+    (clone_expression
+      arguments: (arguments)))
+  (expression_statement
+    (clone_expression
+      arguments: (arguments
+        (argument (variable_name (name)))
+        (argument (argument_placeholder)))))
+  (expression_statement
+    (member_call_expression
+      object: (parenthesized_expression
+        (clone_expression
+          arguments: (arguments
+            (argument (variable_name (name)))
+            (argument
+              (array_creation_expression
+                (array_element_initializer (string (string_content)) (integer)))))))
+      name: (name)
+      arguments: (arguments))))
+
+===============================================
 Arrow functions
 ===============================================
 
@@ -1202,6 +1321,34 @@ array_fill(start_index: 0, num: 100, value: $val);
     )
   )
 )
+
+===============================================
+Cast-type constants as arguments
+===============================================
+
+<?php
+
+get_post($id, OBJECT, 'edit');
+foo(array(1));
+
+---
+
+(program
+  (php_tag)
+  (expression_statement
+    (function_call_expression
+      function: (name)
+      arguments: (arguments
+        (argument (variable_name (name)))
+        (argument (name))
+        (argument (string (string_content))))))
+  (expression_statement
+    (function_call_expression
+      function: (name)
+      arguments: (arguments
+        (argument
+          (array_creation_expression
+            (array_element_initializer (integer))))))))
 
 ==========================================
 Precedence between concatenation and shift
@@ -2561,3 +2708,605 @@ foo(
         (argument (argument_placeholder))
         (argument (integer))
         (variadic_placeholder)))))
+
+===============================================
+Cast-type identifiers in argument expressions
+===============================================
+
+<?php
+foo(OBJECT | 1);
+foo(INT + 1);
+foo(STRING . 'x');
+foo(Object::class);
+foo(Real::make());
+foo(Binary::class);
+
+---
+
+(program
+  (php_tag)
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (binary_expression
+            (name)
+            (integer))))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (binary_expression
+            (name)
+            (integer))))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (binary_expression
+            (name)
+            (string
+              (string_content)))))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (class_constant_access_expression
+            (name)
+            (name))))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (scoped_call_expression
+            (name)
+            (name)
+            (arguments))))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (class_constant_access_expression
+            (name)
+            (name)))))))
+
+===============================================
+Cast names retain ordinary identifier contexts
+===============================================
+
+<?php
+namespace Object\String;
+use Float\Integer as Real;
+use function Double\Binary\real;
+$a = real\foo();
+$b = Object\Bar::X;
+$c = new Object\Bar();
+foo(String\Helper::make());
+$d = $x instanceof Object\Bar;
+$e = Integer\VALUE;
+foo(object: $a, binary: 1, real: 2);
+function real(Object\Bar $object): String\Helper { return $object; }
+class Binary extends Object\Bar implements Float\Contract {
+  public Object\Bar $object;
+  public function real() { return $this->object; }
+}
+real: goto real;
+$int = $object->real;
+clone(object: $a, withProperties: []);
+$x = ( InT ) $int;
+$y = (object) $a;
+foo((/* comment */OBJECT), (OBJECT/* comment */));
+
+---
+
+(program
+  (php_tag)
+  (namespace_definition
+    (namespace_name
+      (name)
+      (name)))
+  (namespace_use_declaration
+    (namespace_use_clause
+      (qualified_name
+        (namespace_name
+          (name))
+        (name))
+      (name)))
+  (namespace_use_declaration
+    (namespace_use_clause
+      (qualified_name
+        (namespace_name
+          (name)
+          (name))
+        (name))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (function_call_expression
+        (qualified_name
+          (namespace_name
+            (name))
+          (name))
+        (arguments))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (class_constant_access_expression
+        (qualified_name
+          (namespace_name
+            (name))
+          (name))
+        (name))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (object_creation_expression
+        (qualified_name
+          (namespace_name
+            (name))
+          (name))
+        (arguments))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (scoped_call_expression
+            (qualified_name
+              (namespace_name
+                (name))
+              (name))
+            (name)
+            (arguments))))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (binary_expression
+        (variable_name
+          (name))
+        (qualified_name
+          (namespace_name
+            (name))
+          (name)))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (qualified_name
+        (namespace_name
+          (name))
+        (name))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (name)
+          (variable_name
+            (name)))
+        (argument
+          (name)
+          (integer))
+        (argument
+          (name)
+          (integer)))))
+  (function_definition
+    (name)
+    (formal_parameters
+      (simple_parameter
+        (named_type
+          (qualified_name
+            (namespace_name
+              (name))
+            (name)))
+        (variable_name
+          (name))))
+    (named_type
+      (qualified_name
+        (namespace_name
+          (name))
+        (name)))
+    (compound_statement
+      (return_statement
+        (variable_name
+          (name)))))
+  (class_declaration
+    (name)
+    (base_clause
+      (qualified_name
+        (namespace_name
+          (name))
+        (name)))
+    (class_interface_clause
+      (qualified_name
+        (namespace_name
+          (name))
+        (name)))
+    (declaration_list
+      (property_declaration
+        (visibility_modifier)
+        (named_type
+          (qualified_name
+            (namespace_name
+              (name))
+            (name)))
+        (property_element
+          (variable_name
+            (name))))
+      (method_declaration
+        (visibility_modifier)
+        (name)
+        (formal_parameters)
+        (compound_statement
+          (return_statement
+            (member_access_expression
+              (variable_name
+                (name))
+              (name)))))))
+  (named_label_statement
+    (name))
+  (goto_statement
+    (name))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (member_access_expression
+        (variable_name
+          (name))
+        (name))))
+  (expression_statement
+    (clone_expression
+      (arguments
+        (argument
+          (name)
+          (variable_name
+            (name)))
+        (argument
+          (name)
+          (array_creation_expression)))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (cast_expression
+        (cast_type)
+        (variable_name
+          (name)))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (cast_expression
+        (cast_type)
+        (variable_name
+          (name)))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (parenthesized_expression
+            (comment)
+            (name)))
+        (argument
+          (parenthesized_expression
+            (name)
+            (comment)))))))
+
+====================
+Qualified type-word identifiers in imports, types, and attributes
+====================
+
+<?php
+use function Foo\Object;
+use const Foo\STRING;
+use Foo\Float;
+#[Foo\Object(1)]
+function f(?Object\Y $a, \Float $b, Foo\STRING $c): ?Float\Y {}
+function g(): namespace\INT {}
+class C extends Foo\Object implements Foo\STRING {
+    use Foo\Float;
+    public ?Object\Y $value;
+}
+
+---
+
+(program
+  (php_tag)
+  (namespace_use_declaration
+    (namespace_use_clause
+      (qualified_name
+        (namespace_name
+          (name))
+        (name))))
+  (namespace_use_declaration
+    (namespace_use_clause
+      (qualified_name
+        (namespace_name
+          (name))
+        (name))))
+  (namespace_use_declaration
+    (namespace_use_clause
+      (qualified_name
+        (namespace_name
+          (name))
+        (name))))
+  (function_definition
+    (attribute_list
+      (attribute_group
+        (attribute
+          (qualified_name
+            (namespace_name
+              (name))
+            (name))
+          (arguments
+            (argument
+              (integer))))))
+    (name)
+    (formal_parameters
+      (simple_parameter
+        (optional_type
+          (named_type
+            (qualified_name
+              (namespace_name
+                (name))
+              (name))))
+        (variable_name
+          (name)))
+      (simple_parameter
+        (named_type
+          (qualified_name
+            (name)))
+        (variable_name
+          (name)))
+      (simple_parameter
+        (named_type
+          (qualified_name
+            (namespace_name
+              (name))
+            (name)))
+        (variable_name
+          (name))))
+    (optional_type
+      (named_type
+        (qualified_name
+          (namespace_name
+            (name))
+          (name))))
+    (compound_statement))
+  (function_definition
+    (name)
+    (formal_parameters)
+    (named_type
+      (relative_name
+        (name)))
+    (compound_statement))
+  (class_declaration
+    (name)
+    (base_clause
+      (qualified_name
+        (namespace_name
+          (name))
+        (name)))
+    (class_interface_clause
+      (qualified_name
+        (namespace_name
+          (name))
+        (name)))
+    (declaration_list
+      (use_declaration
+        (qualified_name
+          (namespace_name
+            (name))
+          (name)))
+      (property_declaration
+        (visibility_modifier)
+        (optional_type
+          (named_type
+            (qualified_name
+              (namespace_name
+                (name))
+              (name))))
+        (property_element
+          (variable_name
+            (name)))))))
+
+====================
+Reserved names in interpolated identifiers and trait adaptations
+====================
+
+<?php
+echo "$a->unset $a[unset] $a->UNSET $a[UNSET]";
+class C {
+    use T {
+        foo as unset;
+        foo as public UNSET;
+        unset as renamed;
+        T::unset as another;
+    }
+}
+
+---
+
+(program
+  (php_tag)
+  (echo_statement
+    (encapsed_string
+      (member_access_expression
+        (variable_name
+          (name))
+        (name))
+      (string_content)
+      (subscript_expression
+        (variable_name
+          (name))
+        (name))
+      (string_content)
+      (member_access_expression
+        (variable_name
+          (name))
+        (name))
+      (string_content)
+      (subscript_expression
+        (variable_name
+          (name))
+        (name))))
+  (class_declaration
+    (name)
+    (declaration_list
+      (use_declaration
+        (name)
+        (use_list
+          (use_as_clause
+            (name)
+            (name))
+          (use_as_clause
+            (name)
+            (visibility_modifier)
+            (name))
+          (use_as_clause
+            (name)
+            (name))
+          (use_as_clause
+            (class_constant_access_expression
+              (name)
+              (name))
+            (name)))))))
+
+====================
+Reserved unset namespace paths in expression contexts
+====================
+
+<?php
+foo(unset\X());
+foo(UNSET\X(), unset\VALUE, unset\Type::VALUE);
+$a = unset\X();
+return unset\X();
+if (unset\X()) { echo unset\VALUE; }
+foo(new unset\Type(), $a instanceof unset\Type);
+foo(\unset\X(), X\unset(), namespace\unset\X());
+
+---
+
+(program
+  (php_tag)
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (function_call_expression
+            (qualified_name
+              (namespace_name
+                (name))
+              (name))
+            (arguments))))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (function_call_expression
+            (qualified_name
+              (namespace_name
+                (name))
+              (name))
+            (arguments)))
+        (argument
+          (qualified_name
+            (namespace_name
+              (name))
+            (name)))
+        (argument
+          (class_constant_access_expression
+            (qualified_name
+              (namespace_name
+                (name))
+              (name))
+            (name))))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (function_call_expression
+        (qualified_name
+          (namespace_name
+            (name))
+          (name))
+        (arguments))))
+  (return_statement
+    (function_call_expression
+      (qualified_name
+        (namespace_name
+          (name))
+        (name))
+      (arguments)))
+  (if_statement
+    (parenthesized_expression
+      (function_call_expression
+        (qualified_name
+          (namespace_name
+            (name))
+          (name))
+        (arguments)))
+    (compound_statement
+      (echo_statement
+        (qualified_name
+          (namespace_name
+            (name))
+          (name)))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (object_creation_expression
+            (qualified_name
+              (namespace_name
+                (name))
+              (name))
+            (arguments)))
+        (argument
+          (binary_expression
+            (variable_name
+              (name))
+            (qualified_name
+              (namespace_name
+                (name))
+              (name)))))))
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (function_call_expression
+            (qualified_name
+              (namespace_name
+                (name))
+              (name))
+            (arguments)))
+        (argument
+          (function_call_expression
+            (qualified_name
+              (namespace_name
+                (name))
+              (name))
+            (arguments)))
+        (argument
+          (function_call_expression
+            (relative_name
+              (namespace_name
+                (name))
+              (name))
+            (arguments)))))))
