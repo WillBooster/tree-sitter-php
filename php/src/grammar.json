@@ -2159,7 +2159,7 @@
             },
             {
               "type": "SYMBOL",
-              "name": "_identifier"
+              "name": "_unreserved_identifier"
             }
           ]
         },
@@ -2193,7 +2193,7 @@
                 },
                 {
                   "type": "SYMBOL",
-                  "name": "_identifier"
+                  "name": "_unreserved_identifier"
                 }
               ]
             },
@@ -2209,7 +2209,7 @@
                   "members": [
                     {
                       "type": "SYMBOL",
-                      "name": "_identifier"
+                      "name": "_unreserved_identifier"
                     },
                     {
                       "type": "BLANK"
@@ -7389,7 +7389,7 @@
             "name": "name",
             "content": {
               "type": "SYMBOL",
-              "name": "_identifier"
+              "name": "_unreserved_identifier"
             }
           }
         ]
@@ -7430,7 +7430,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "_identifier"
+          "name": "_unreserved_identifier"
         },
         {
           "type": "SYMBOL",

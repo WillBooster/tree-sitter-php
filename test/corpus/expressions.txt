@@ -3121,3 +3121,65 @@ class C extends Foo\Object implements Foo\STRING {
         (property_element
           (variable_name
             (name)))))))
+
+====================
+Reserved names in interpolated identifiers and trait adaptations
+====================
+
+<?php
+echo "$a->unset $a[unset] $a->UNSET $a[UNSET]";
+class C {
+    use T {
+        foo as unset;
+        foo as public UNSET;
+        unset as renamed;
+        T::unset as another;
+    }
+}
+
+---
+
+(program
+  (php_tag)
+  (echo_statement
+    (encapsed_string
+      (member_access_expression
+        (variable_name
+          (name))
+        (name))
+      (string_content)
+      (subscript_expression
+        (variable_name
+          (name))
+        (name))
+      (string_content)
+      (member_access_expression
+        (variable_name
+          (name))
+        (name))
+      (string_content)
+      (subscript_expression
+        (variable_name
+          (name))
+        (name))))
+  (class_declaration
+    (name)
+    (declaration_list
+      (use_declaration
+        (name)
+        (use_list
+          (use_as_clause
+            (name)
+            (name))
+          (use_as_clause
+            (name)
+            (visibility_modifier)
+            (name))
+          (use_as_clause
+            (name)
+            (name))
+          (use_as_clause
+            (class_constant_access_expression
+              (name)
+              (name))
+            (name)))))))

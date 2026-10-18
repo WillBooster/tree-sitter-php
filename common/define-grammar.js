@@ -486,16 +486,16 @@ module.exports = function defineGrammar(dialect) {
       )),
 
       use_as_clause: $ => seq(
-        choice($.class_constant_access_expression, $._identifier),
+        choice($.class_constant_access_expression, $._unreserved_identifier),
         keyword('as'),
         choice(
           seq(
             optional($.visibility_modifier),
-            $._identifier,
+            $._unreserved_identifier,
           ),
           seq(
             $.visibility_modifier,
-            optional($._identifier),
+            optional($._unreserved_identifier),
           ),
         ),
       ),
@@ -1376,7 +1376,7 @@ module.exports = function defineGrammar(dialect) {
       _simple_string_member_access_expression: $ => prec(PREC.MEMBER, seq(
         field('object', $.variable_name),
         '->',
-        field('name', $._identifier),
+        field('name', $._unreserved_identifier),
       )),
 
       _simple_string_subscript_unary_expression: $ => prec.left(seq('-', $.integer)),
@@ -1384,7 +1384,7 @@ module.exports = function defineGrammar(dialect) {
       _simple_string_array_access_argument: $ => choice(
         $.integer,
         alias($._simple_string_subscript_unary_expression, $.unary_op_expression),
-        $._identifier,
+        $._unreserved_identifier,
         $.variable_name,
       ),
 
