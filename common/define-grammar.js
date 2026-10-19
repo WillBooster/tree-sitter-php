@@ -47,7 +47,7 @@ const PREC = {
  *
  * @see https://www.php.net/manual/en/reserved.keywords.php
  */
-const BASE_RESERVED_KEYWORD_SET = [
+const BASE_RESERVED_KEYWORDS = [
   'abstract', 'and', 'as', 'break', 'callable', 'case',
   'catch', 'class', 'clone', 'const', 'continue', 'declare',
   'default', 'do', 'echo', 'else', 'elseif', 'enddeclare',
@@ -58,7 +58,9 @@ const BASE_RESERVED_KEYWORD_SET = [
   'or', 'print', 'private', 'protected', 'public', 'readonly',
   'require', 'require_once', 'return', 'static', 'switch', 'throw',
   'trait', 'try', 'unset', 'use', 'var', 'while', 'xor', 'yield from', 'yield',
-].map(r => keyword(r, false));
+];
+
+const BASE_RESERVED_KEYWORD_SET = BASE_RESERVED_KEYWORDS.map(word => keyword(word, false));
 
 const IDENTIFIER_TYPE_KEYWORDS = ['bool', 'float', 'int', 'object', 'string'].map(word => keyword(word, false));
 
@@ -93,9 +95,12 @@ module.exports = function defineGrammar(dialect) {
       [$.type, $.union_type, $.intersection_type, $.disjunctive_normal_form_type],
       [$.union_type, $.disjunctive_normal_form_type],
       [$.intersection_type],
+      [$._class_const_type, $._class_const_union_type, $._class_const_intersection_type, $._class_const_dnf_type],
+      [$._class_const_union_type, $._class_const_dnf_type],
       [$.if_statement],
 
       [$.namespace_name],
+      [$._class_const_namespace_name],
       [$.heredoc_body],
       [$.parenthesized_expression, $.argument],
     ],
@@ -150,6 +155,7 @@ module.exports = function defineGrammar(dialect) {
       $.expression,
       $.primary_expression,
       $.type,
+      $._class_const_type,
       $.literal,
     ],
 
@@ -294,6 +300,22 @@ module.exports = function defineGrammar(dialect) {
         $.relative_name,
       ),
 
+      _class_const_qualified_name: $ => seq(
+        field('prefix', seq(optional('\\'), optional(alias($._class_const_namespace_name, $.namespace_name)), '\\')),
+        $._class_const_namespace_identifier,
+      ),
+
+      _class_const_namespace_name: $ => seq(
+        $._class_const_namespace_identifier,
+        repeat(seq('\\', $._class_const_namespace_identifier)),
+      ),
+
+      _class_const_namespace_identifier: $ => choice(
+        $._unreserved_identifier,
+        alias($._static_type, $.name),
+        alias(choice(...BASE_RESERVED_KEYWORDS.filter(word => !['namespace', 'static', 'yield from'].includes(word)).map(word => keyword(word, false))), $.name),
+      ),
+
       namespace_name: $ => seq(
         $._unreserved_identifier,
         repeat(seq('\\', $._unreserved_identifier)),
@@ -397,7 +419,7 @@ module.exports = function defineGrammar(dialect) {
         optional($.final_modifier),
         repeat($._modifier),
         keyword('const'),
-        optional(field('type', $.type)),
+        optional(field('type', alias($._class_const_type, $.type))),
         commaSep1(alias($._class_const_element, $.const_element)),
         $._semicolon,
       ),
@@ -616,6 +638,40 @@ module.exports = function defineGrammar(dialect) {
         $.primitive_type,
       ),
 
+      _static_type: _ => prec(-1, keyword('static', false)),
+
+      _class_const_type: $ => choice(
+        $._class_const_types,
+        alias($._class_const_union_type, $.union_type),
+        alias($._class_const_intersection_type, $.intersection_type),
+        alias($._class_const_dnf_type, $.disjunctive_normal_form_type),
+      ),
+
+      _class_const_types: $ => choice(
+        alias($._class_const_named_type, $.named_type),
+        alias($._class_const_optional_type, $.optional_type),
+        $.primitive_type,
+      ),
+
+      _class_const_named_type: $ => choice(
+        alias($._static_type, $.name),
+        reserved('classes', $.name),
+        alias($._class_const_qualified_name, $.qualified_name),
+        $.relative_name,
+      ),
+
+      _class_const_optional_type: $ => seq('?', choice(
+        alias($._class_const_named_type, $.named_type),
+        $.primitive_type,
+      )),
+
+      _class_const_union_type: $ => pipeSep1($._class_const_types),
+      _class_const_intersection_type: $ => ampSep1($._class_const_types),
+      _class_const_dnf_type: $ => prec.dynamic(-1, pipeSep1(choice(
+        seq('(', alias($._class_const_intersection_type, $.intersection_type), ')'),
+        $._class_const_types,
+      ))),
+
       named_type: $ => choice(
         reserved('classes', $.name),
         $.qualified_name,
@@ -657,8 +713,24 @@ module.exports = function defineGrammar(dialect) {
 
       _return_type: $ => seq(':', field('return_type', choice($.type, $.bottom_type))),
 
-      _const_element: $ => seq($._identifier, '=', $.expression),
-      _class_const_element: $ => seq($._unreserved_identifier, '=', $.expression),
+      _const_element: $ => seq(
+        choice(
+          $._identifier,
+          alias(choice(...['iterable', 'mixed', 'void'].map(type => keyword(type, false))), $.name),
+        ),
+        '=',
+        $.expression,
+      ),
+      _class_const_element: $ => seq(
+        choice(
+          reserved('nothing', $.name),
+          alias($.primitive_type, $.name),
+          alias($._static_type, $.name),
+          alias(choice(...BASE_RESERVED_KEYWORDS.filter(word => !['callable', 'static', 'yield from'].includes(word)).map(word => keyword(word, false))), $.name),
+        ),
+        '=',
+        $.expression,
+      ),
 
       echo_statement: $ => seq(keyword('echo'), $._expressions, $._semicolon),
 

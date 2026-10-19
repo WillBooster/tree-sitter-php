@@ -5390,6 +5390,11 @@
     }
   },
   {
+    "type": "var_modifier",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "variable_name",
     "named": true,
     "fields": {},
@@ -6090,10 +6095,6 @@
   {
     "type": "use",
     "named": false
-  },
-  {
-    "type": "var_modifier",
-    "named": true
   },
   {
     "type": "while",

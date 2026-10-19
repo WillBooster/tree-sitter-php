@@ -260,3 +260,340 @@ class Foo {
           (name)
           (string
             (string_content)))))))
+
+=========================================
+Keyword names in class-like constants
+=========================================
+
+<?php
+class Constants {
+    const CALLABLE = 1, NAMESPACE = 2, VOID = 3, FALSE = 4, MIXED = 5, TRUE = 6;
+    const callable = 1, namespace = 2, void = 3, false = 4, mixed = 5, true = 6;
+    public const string DEFAULT = 'default';
+    final protected const ?string FUNCTION = null;
+    public const string|int NEW = 1;
+    public const Vendor\Type PRIVATE = VALUE;
+}
+interface Contract {
+    const string VOID = 'void';
+}
+trait Shared {
+    const mixed MIXED = 1;
+}
+enum Status {
+    const bool TRUE = true;
+}
+
+---
+
+(program
+  (php_tag)
+  (class_declaration
+    (name)
+    (declaration_list
+      (const_declaration
+        (const_element
+          (name)
+          (integer))
+        (const_element
+          (name)
+          (integer))
+        (const_element
+          (name)
+          (integer))
+        (const_element
+          (name)
+          (integer))
+        (const_element
+          (name)
+          (integer))
+        (const_element
+          (name)
+          (integer)))
+      (const_declaration
+        (const_element
+          (name)
+          (integer))
+        (const_element
+          (name)
+          (integer))
+        (const_element
+          (name)
+          (integer))
+        (const_element
+          (name)
+          (integer))
+        (const_element
+          (name)
+          (integer))
+        (const_element
+          (name)
+          (integer)))
+      (const_declaration
+        (visibility_modifier)
+        (primitive_type)
+        (const_element
+          (name)
+          (string
+            (string_content))))
+      (const_declaration
+        (final_modifier)
+        (visibility_modifier)
+        (optional_type
+          (primitive_type))
+        (const_element
+          (name)
+          (null)))
+      (const_declaration
+        (visibility_modifier)
+        (union_type
+          (primitive_type)
+          (primitive_type))
+        (const_element
+          (name)
+          (integer)))
+      (const_declaration
+        (visibility_modifier)
+        (named_type
+          (qualified_name
+            (namespace_name
+              (name))
+            (name)))
+        (const_element
+          (name)
+          (name)))))
+  (interface_declaration
+    (name)
+    (declaration_list
+      (const_declaration
+        (primitive_type)
+        (const_element
+          (name)
+          (string
+            (string_content))))))
+  (trait_declaration
+    (name)
+    (declaration_list
+      (const_declaration
+        (primitive_type)
+        (const_element
+          (name)
+          (integer)))))
+  (enum_declaration
+    (name)
+    (enum_declaration_list
+      (const_declaration
+        (primitive_type)
+        (const_element
+          (name)
+          (boolean))))))
+
+=========================================
+Type-word global constant declarations
+=========================================
+
+<?php
+const VOID = 1, MIXED = 2, ITERABLE = 3;
+const void = 1, mixed = 2, iterable = 3;
+const bool = 1, float = 2, int = 3, object = 4, string = 5;
+
+---
+
+(program
+  (php_tag)
+  (const_declaration
+    (const_element
+      (name)
+      (integer))
+    (const_element
+      (name)
+      (integer))
+    (const_element
+      (name)
+      (integer)))
+  (const_declaration
+    (const_element
+      (name)
+      (integer))
+    (const_element
+      (name)
+      (integer))
+    (const_element
+      (name)
+      (integer)))
+  (const_declaration
+    (const_element
+      (name)
+      (integer))
+    (const_element
+      (name)
+      (integer))
+    (const_element
+      (name)
+      (integer))
+    (const_element
+      (name)
+      (integer))
+    (const_element
+      (name)
+      (integer))))
+
+=========================================
+Static constant types and names
+=========================================
+
+<?php
+class Typed {
+    public const static VALUE = OTHER;
+    public const ?static OPTIONAL = null;
+    public const static|Other CHOICE = OTHER;
+    const static = 1;
+    const static STATIC = OTHER;
+}
+interface Contract { const STATIC VALUE = OTHER; }
+trait Shared { public const Static VALUE = OTHER; }
+enum Status { const static VALUE = OTHER; }
+
+---
+
+(program
+  (php_tag)
+  (class_declaration
+    (name)
+    (declaration_list
+      (const_declaration
+        (visibility_modifier)
+        (named_type
+          (name))
+        (const_element
+          (name)
+          (name)))
+      (const_declaration
+        (visibility_modifier)
+        (optional_type
+          (named_type
+            (name)))
+        (const_element
+          (name)
+          (null)))
+      (const_declaration
+        (visibility_modifier)
+        (union_type
+          (named_type
+            (name))
+          (named_type
+            (name)))
+        (const_element
+          (name)
+          (name)))
+      (const_declaration
+        (const_element
+          (name)
+          (integer)))
+      (const_declaration
+        (named_type
+          (name))
+        (const_element
+          (name)
+          (name)))))
+  (interface_declaration
+    (name)
+    (declaration_list
+      (const_declaration
+        (named_type
+          (name))
+        (const_element
+          (name)
+          (name)))))
+  (trait_declaration
+    (name)
+    (declaration_list
+      (const_declaration
+        (visibility_modifier)
+        (named_type
+          (name))
+        (const_element
+          (name)
+          (name)))))
+  (enum_declaration
+    (name)
+    (enum_declaration_list
+      (const_declaration
+        (named_type
+          (name))
+        (const_element
+          (name)
+          (name))))))
+
+=========================================
+Keyword prefixes in constant types
+=========================================
+
+<?php
+class C {
+    public const if\X A = 1;
+    public const static\X B = 1;
+    public const (CLASS\X&Other)|static C = 1;
+}
+function f(static\X $x): static\X {}
+
+---
+
+(program
+  (php_tag)
+  (class_declaration
+    (name)
+    (declaration_list
+      (const_declaration
+        (visibility_modifier)
+        (named_type
+          (qualified_name
+            (namespace_name
+              (name))
+            (name)))
+        (const_element
+          (name)
+          (integer)))
+      (const_declaration
+        (visibility_modifier)
+        (named_type
+          (qualified_name
+            (namespace_name
+              (name))
+            (name)))
+        (const_element
+          (name)
+          (integer)))
+      (const_declaration
+        (visibility_modifier)
+        (disjunctive_normal_form_type
+          (intersection_type
+            (named_type
+              (qualified_name
+                (namespace_name
+                  (name))
+                (name)))
+            (named_type
+              (name)))
+          (named_type
+            (name)))
+        (const_element
+          (name)
+          (integer)))))
+  (function_definition
+    (name)
+    (formal_parameters
+      (simple_parameter
+        (named_type
+          (qualified_name
+            (namespace_name
+              (name))
+            (name)))
+        (variable_name
+          (name))))
+    (named_type
+      (qualified_name
+        (namespace_name
+          (name))
+        (name)))
+    (compound_statement)))
