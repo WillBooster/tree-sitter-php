@@ -314,9 +314,10 @@ module.exports = function defineGrammar(dialect) {
       ),
 
       _class_const_namespace_identifier: $ => choice(
-        $._unreserved_identifier,
+        reserved('nothing', $.name),
+        alias($.primitive_type, $.name),
         alias($._static_type, $.name),
-        alias(choice(...BASE_RESERVED_KEYWORDS.filter(word => !['namespace', 'static', 'yield from'].includes(word)).map(word => keyword(word, false))), $.name),
+        alias(choice(...BASE_RESERVED_KEYWORDS.filter(word => !['callable', 'namespace', 'static', 'yield from'].includes(word)).map(word => keyword(word, false))), $.name),
       ),
 
       namespace_name: $ => seq(
