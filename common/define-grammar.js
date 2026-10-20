@@ -10,6 +10,12 @@
 /// <reference types="tree-sitter-cli/dsl" />
 // @ts-check
 
+// PHP accepts identifier bytes above 127, so UTF-8 names extend beyond U+00FF.
+// https://www.php.net/manual/en/language.variables.basics.php
+// Exclude the whitespace characters recognized by extras from identifier ranges.
+const NAME_RANGE = String.raw`\u0080-\u009f\u00a1-\u200a\u200c-\u205f\u2061-\ufefe\uff00-\uffff`;
+const NAME_PATTERN = new RegExp(`[_a-zA-Z${NAME_RANGE}][_a-zA-Z${NAME_RANGE}\\d]*`);
+
 const PREC = {
   COMMA: -1,
   CAST: -1,
@@ -43,8 +49,6 @@ const PREC = {
 };
 
 /**
- * The primary reserved keywords in PHP, but not in all contexts.
- *
  * @see https://www.php.net/manual/en/reserved.keywords.php
  */
 const BASE_RESERVED_KEYWORDS = [
@@ -65,8 +69,6 @@ const BASE_RESERVED_KEYWORD_SET = BASE_RESERVED_KEYWORDS.map(word => keyword(wor
 const IDENTIFIER_TYPE_KEYWORDS = ['bool', 'float', 'int', 'object', 'string'].map(word => keyword(word, false));
 
 /**
- * Other keywords that are reserved in PHP, and cannot be used as class names.
- *
  * @see https://www.php.net/manual/en/reserved.other-reserved-words.php
  */
 const OTHER_RESERVED_KEYWORD_SET = [
@@ -1166,7 +1168,6 @@ module.exports = function defineGrammar(dialect) {
         field('type', $.cast_type),
         field('value', choice(
           $._unary_expression,
-          // `**` binds tighter than casts: `(int)$a ** 2` casts `$a ** 2`.
           alias($._cast_exponential_expression, $.binary_expression),
           $.match_expression,
           $.yield_expression,
@@ -1650,7 +1651,7 @@ module.exports = function defineGrammar(dialect) {
         $.scoped_call_expression,
       ),
 
-      variable_name: $ => seq('$', $._unreserved_identifier),
+      variable_name: $ => seq('$', alias(token.immediate(NAME_PATTERN), $.name)),
 
       by_ref: $ => seq('&', $._variable),
 
@@ -1734,17 +1735,7 @@ module.exports = function defineGrammar(dialect) {
         alias(choice(...IDENTIFIER_TYPE_KEYWORDS), $.name),
       ),
 
-      // Note that PHP officially only supports the following character regex
-      // for identifiers: ^[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*$
-      // However, there is a "bug" in how PHP parses multi-byte characters that allows
-      // for a much larger range of characters to be used in identifiers.
-      //
-      // See: https://www.php.net/manual/en/language.variables.basics.php
-      name: _ => {
-        // We need to side step around the whitespace characters in the extras array.
-        const range = String.raw`\u0080-\u009f\u00a1-\u200a\u200c-\u205f\u2061-\ufefe\uff00-\uffff`;
-        return new RegExp(`[_a-zA-Z${range}][_a-zA-Z${range}\\d]*`);
-      },
+      name: _ => NAME_PATTERN,
 
       comment: _ => token(choice(
         seq(
@@ -1766,9 +1757,6 @@ module.exports = function defineGrammar(dialect) {
 };
 
 /**
- * Creates a regex that matches the given word case-insensitively,
- * and will alias the regex to the word if aliasAsWord is true
- *
  * @param {string} word
  * @param {boolean} aliasAsWord
  *
@@ -1782,8 +1770,6 @@ function keyword(word, aliasAsWord = true) {
 }
 
 /**
- * Creates a rule to match one or more of the rules separated by a comma
- *
  * @param {Rule} rule
  *
  * @returns {SeqRule}
@@ -1793,8 +1779,6 @@ function commaSep1(rule) {
 }
 
 /**
- * Creates a rule to optionally match one or more of the rules separated by a comma
- *
  * @param {Rule} rule
  *
  * @returns {ChoiceRule}
@@ -1804,8 +1788,6 @@ function commaSep(rule) {
 }
 
 /**
- * Creates a rule to match one or more of the rules separated by a pipe
- *
  * @param {Rule} rule
  *
  * @returns {SeqRule}
@@ -1815,8 +1797,6 @@ function pipeSep1(rule) {
 }
 
 /**
- * Creates a rule to  match one or more of the rules separated by an ampersand
- *
  * @param {Rule} rule
  * @returns {SeqRule}
  */
