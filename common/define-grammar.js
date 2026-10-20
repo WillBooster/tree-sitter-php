@@ -12,7 +12,7 @@
 
 // PHP accepts identifier bytes above 127, so UTF-8 names extend beyond U+00FF.
 // https://www.php.net/manual/en/language.variables.basics.php
-// Exclude the whitespace characters recognized by extras from identifier ranges.
+// Exclude the whitespace characters recognized by extras from ordinary-name ranges.
 const NAME_RANGE = String.raw`\u0080-\u009f\u00a1-\u200a\u200c-\u205f\u2061-\ufefe\uff00-\uffff`;
 const NAME_PATTERN = new RegExp(`[_a-zA-Z${NAME_RANGE}][_a-zA-Z${NAME_RANGE}\\d]*`);
 const VARIABLE_NAME_PATTERN = /[_a-zA-Z\u0080-\u{10ffff}][_a-zA-Z0-9\u0080-\u{10ffff}]*/u;
