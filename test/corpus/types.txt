@@ -456,3 +456,54 @@ class Truthy {
         (primitive_type)
         (compound_statement)))))
 
+===============================================
+Primitive words in qualified class constant types
+===============================================
+
+<?php
+
+class QualifiedTypes {
+    public const array\X ARRAY = UNKNOWN;
+    public const false\X FALSE = UNKNOWN;
+    public const iterable\X ITERABLE = UNKNOWN;
+    public const mixed\X MIXED = UNKNOWN;
+    public const null\X NULL = UNKNOWN;
+    public const true\X TRUE = UNKNOWN;
+    public const void\X VOID = UNKNOWN;
+}
+
+---
+
+(program
+  (php_tag)
+  (class_declaration
+    (name)
+    (declaration_list
+      (const_declaration
+        (visibility_modifier)
+        (named_type (qualified_name (namespace_name (name)) (name)))
+        (const_element (name) (name)))
+      (const_declaration
+        (visibility_modifier)
+        (named_type (qualified_name (namespace_name (name)) (name)))
+        (const_element (name) (name)))
+      (const_declaration
+        (visibility_modifier)
+        (named_type (qualified_name (namespace_name (name)) (name)))
+        (const_element (name) (name)))
+      (const_declaration
+        (visibility_modifier)
+        (named_type (qualified_name (namespace_name (name)) (name)))
+        (const_element (name) (name)))
+      (const_declaration
+        (visibility_modifier)
+        (named_type (qualified_name (namespace_name (name)) (name)))
+        (const_element (name) (name)))
+      (const_declaration
+        (visibility_modifier)
+        (named_type (qualified_name (namespace_name (name)) (name)))
+        (const_element (name) (name)))
+      (const_declaration
+        (visibility_modifier)
+        (named_type (qualified_name (namespace_name (name)) (name)))
+        (const_element (name) (name))))))
