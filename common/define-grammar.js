@@ -31,8 +31,8 @@ const PREC = {
   SHIFT: 16,
   PLUS: 17,
   TIMES: 18,
-  EXPONENTIAL: 19,
-  NEG: 20,
+  NEG: 19,
+  EXPONENTIAL: 20,
   INSTANCEOF: 21,
   INC: 22,
   SCOPE: 23,
@@ -1070,7 +1070,7 @@ module.exports = function defineGrammar(dialect) {
         field('argument', $.expression),
       )),
 
-      error_suppression_expression: $ => prec(PREC.INC, seq('@', $.expression)),
+      error_suppression_expression: $ => prec(PREC.NEG, seq('@', $.expression)),
 
       clone_expression: $ => seq(
         keyword('clone'),
@@ -1160,10 +1160,18 @@ module.exports = function defineGrammar(dialect) {
         field('type', $.cast_type),
         field('value', choice(
           $._unary_expression,
+          // `**` binds tighter than casts: `(int)$a ** 2` casts `$a ** 2`.
+          alias($._cast_exponential_expression, $.binary_expression),
           $.include_expression,
           $.include_once_expression,
           $.error_suppression_expression,
         )),
+      )),
+
+      _cast_exponential_expression: $ => prec.right(PREC.EXPONENTIAL, seq(
+        field('left', $._unary_expression),
+        field('operator', '**'),
+        field('right', $.expression),
       )),
 
       cast_variable: $ => prec(PREC.CAST, seq(
