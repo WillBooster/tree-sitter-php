@@ -231,3 +231,64 @@ Static-leading intersection property type
 ---
 
 (ERROR)
+
+===============================================
+Whitespace between variable sigil and name
+:error
+===============================================
+
+<?php
+$ x = 1;
+
+---
+
+(ERROR)
+
+===============================================
+Newline between variable sigil and name
+:error
+===============================================
+
+<?php
+$
+x = 1;
+
+---
+
+(ERROR)
+
+===============================================
+Comment between variable sigil and name
+:error
+===============================================
+
+<?php
+$/* comment */x = 1;
+
+---
+
+(ERROR)
+
+===============================================
+Whitespace inside nested simple variable
+:error
+===============================================
+
+<?php
+$$ x = 1;
+
+---
+
+(ERROR)
+
+===============================================
+Whitespace inside complex interpolation variable
+:error
+===============================================
+
+<?php
+$value = "{$ x}";
+
+---
+
+(ERROR)

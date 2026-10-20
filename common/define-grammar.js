@@ -10,6 +10,10 @@
 /// <reference types="tree-sitter-cli/dsl" />
 // @ts-check
 
+// PHP accepts identifier bytes above 127, so UTF-8 names extend beyond U+00FF.
+// https://www.php.net/manual/en/language.variables.basics.php
+const NAME_PATTERN = /[_a-zA-Z\u0080-\u{10ffff}][_a-zA-Z0-9\u0080-\u{10ffff}]*/u;
+
 const PREC = {
   COMMA: -1,
   CAST: -1,
@@ -1646,7 +1650,7 @@ module.exports = function defineGrammar(dialect) {
         $.scoped_call_expression,
       ),
 
-      variable_name: $ => seq('$', $._unreserved_identifier),
+      variable_name: $ => seq('$', alias(token.immediate(NAME_PATTERN), $.name)),
 
       by_ref: $ => seq('&', $._variable),
 
@@ -1730,7 +1734,7 @@ module.exports = function defineGrammar(dialect) {
         alias(choice(...IDENTIFIER_TYPE_KEYWORDS), $.name),
       ),
 
-      name: _ => /[_a-zA-Z\u0080-\u{10ffff}][_a-zA-Z0-9\u0080-\u{10ffff}]*/u,
+      name: _ => NAME_PATTERN,
 
       comment: _ => token(choice(
         seq(
