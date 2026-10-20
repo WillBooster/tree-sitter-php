@@ -17,7 +17,7 @@ and asymmetric visibility in constructor property promotion.
 Its external scanner adapts to the generated array API and fixes incremental heredoc parsing. It generates the parsers with the
 [WillBooster/tree-sitter](https://github.com/WillBooster/tree-sitter) generator. The parsers carry that fork's own ABI
 number `0x57420006`, so they load only with its 7.x runtime (`willbooster-tree-sitter`,
-`@willbooster/web-tree-sitter`), version 7.0.5 or later. That runtime loads no parser that upstream's generator wrote.
+`@willbooster/web-tree-sitter`), version 7.0.10 or later. That runtime loads no parser that upstream's generator wrote.
 
 It holds two grammars, as upstream does: `php` parses PHP embedded in text, which starts in text mode and enters PHP at
 an opening tag such as `<?php`, and `php_only` parses PHP code on its own, where the opening tag is optional.
@@ -25,7 +25,7 @@ an opening tag such as `<?php`, and `php_only` parses PHP code on its own, where
 ## Usage
 
 The npm package ships `tree-sitter-php.wasm` and `tree-sitter-php_only.wasm` for
-[@willbooster/web-tree-sitter](https://www.npmjs.com/package/@willbooster/web-tree-sitter) version 7.0.5 or later in the 7.x series, which runs in Node.js, Bun, browsers, and Cloudflare Workers. In Node.js and Bun, load the grammar from its path:
+[@willbooster/web-tree-sitter](https://www.npmjs.com/package/@willbooster/web-tree-sitter) version 7.0.10 or later in the 7.x series, which runs in Node.js, Bun, browsers, and Cloudflare Workers. In Node.js and Bun, load the grammar from its path:
 
 ```js
 import { fileURLToPath } from 'node:url';
@@ -73,7 +73,7 @@ fuzzed with:
 
 ```toml
 [dependencies]
-tree-sitter = { package = "willbooster-tree-sitter", version = "7.0.5" }
+tree-sitter = { package = "willbooster-tree-sitter", version = "7.0.10" }
 tree-sitter-php = { package = "willbooster-tree-sitter-php", version = "2" }
 ```
 

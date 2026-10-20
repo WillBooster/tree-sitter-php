@@ -12,10 +12,7 @@
 
 // PHP accepts identifier bytes above 127, so UTF-8 names extend beyond U+00FF.
 // https://www.php.net/manual/en/language.variables.basics.php
-// Exclude the whitespace characters recognized by extras from ordinary-name ranges.
-const NAME_RANGE = String.raw`\u0080-\u009f\u00a1-\u200a\u200c-\u205f\u2061-\ufefe\uff00-\uffff`;
-const NAME_PATTERN = new RegExp(`[_a-zA-Z${NAME_RANGE}][_a-zA-Z${NAME_RANGE}\\d]*`);
-const VARIABLE_NAME_PATTERN = /[_a-zA-Z\u0080-\u{10ffff}][_a-zA-Z0-9\u0080-\u{10ffff}]*/u;
+const NAME_PATTERN = /[_a-zA-Z\u0080-\u{10ffff}][_a-zA-Z0-9\u0080-\u{10ffff}]*/u;
 
 const PREC = {
   COMMA: -1,
@@ -127,7 +124,7 @@ module.exports = function defineGrammar(dialect) {
     extras: $ => {
       const extras = [
         $.comment,
-        /[\s\u00A0\u200B\u2060\uFEFF]/,
+        /[ \t\n\r]/,
       ];
 
       if (dialect === 'php') {
@@ -194,7 +191,7 @@ module.exports = function defineGrammar(dialect) {
 
       text: _ => repeat1(choice(
         token(prec(-1, /</)),
-        token(prec(1, /[^\s<][^<]*/)),
+        token(prec(1, /[^ \t\n\r<][^<]*/)),
       )),
 
       statement: $ => choice(
@@ -1653,7 +1650,7 @@ module.exports = function defineGrammar(dialect) {
         $.scoped_call_expression,
       ),
 
-      variable_name: $ => seq('$', alias(token.immediate(VARIABLE_NAME_PATTERN), $.name)),
+      variable_name: $ => seq('$', alias(token.immediate(NAME_PATTERN), $.name)),
 
       by_ref: $ => seq('&', $._variable),
 

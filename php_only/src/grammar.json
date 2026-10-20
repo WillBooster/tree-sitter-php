@@ -104,7 +104,7 @@
               "value": 1,
               "content": {
                 "type": "PATTERN",
-                "value": "[^\\s<][^<]*"
+                "value": "[^ \\t\\n\\r<][^<]*"
               }
             }
           }
@@ -10808,7 +10808,8 @@
     },
     "name": {
       "type": "PATTERN",
-      "value": "[_a-zA-Z\\u0080-\\u009f\\u00a1-\\u200a\\u200c-\\u205f\\u2061-\\ufefe\\uff00-\\uffff][_a-zA-Z\\u0080-\\u009f\\u00a1-\\u200a\\u200c-\\u205f\\u2061-\\ufefe\\uff00-\\uffff\\d]*"
+      "value": "[_a-zA-Z\\u0080-\\u{10ffff}][_a-zA-Z0-9\\u0080-\\u{10ffff}]*",
+      "flags": "u"
     },
     "comment": {
       "type": "TOKEN",
@@ -10897,7 +10898,7 @@
     },
     {
       "type": "PATTERN",
-      "value": "[\\s\\u00A0\\u200B\\u2060\\uFEFF]"
+      "value": "[ \\t\\n\\r]"
     }
   ],
   "conflicts": [
