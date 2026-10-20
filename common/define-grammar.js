@@ -1076,6 +1076,7 @@ module.exports = function defineGrammar(dialect) {
         keyword('clone'),
         choice(
           $.primary_expression,
+          $.match_expression,
           field('arguments', $.arguments),
         ),
       ),
@@ -1160,6 +1161,7 @@ module.exports = function defineGrammar(dialect) {
         field('type', $.cast_type),
         field('value', choice(
           $._unary_expression,
+          $.match_expression,
           $.include_expression,
           $.include_once_expression,
           $.error_suppression_expression,

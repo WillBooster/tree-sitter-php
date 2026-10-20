@@ -3310,3 +3310,46 @@ foo(\unset\X(), X\unset(), namespace\unset\X());
                 (name))
               (name))
             (arguments)))))))
+
+================================================================================
+Match expressions as cast and clone operands
+================================================================================
+
+<?php
+$a = (int)match($x) { 1 => 2, default => 3 };
+$b = clone match($x) { default => $y };
+
+---
+
+(program
+  (php_tag)
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (cast_expression
+        (cast_type)
+        (match_expression
+          (parenthesized_expression
+            (variable_name
+              (name)))
+          (match_block
+            (match_conditional_expression
+              (match_condition_list
+                (integer))
+              (integer))
+            (match_default_expression
+              (integer)))))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (clone_expression
+        (match_expression
+          (parenthesized_expression
+            (variable_name
+              (name)))
+          (match_block
+            (match_default_expression
+              (variable_name
+                (name)))))))))

@@ -1326,6 +1326,10 @@
             "named": true
           },
           {
+            "type": "match_expression",
+            "named": true
+          },
+          {
             "type": "primary_expression",
             "named": true
           },
@@ -1592,6 +1596,10 @@
       "multiple": false,
       "required": false,
       "types": [
+        {
+          "type": "match_expression",
+          "named": true
+        },
         {
           "type": "primary_expression",
           "named": true
