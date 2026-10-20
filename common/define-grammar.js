@@ -1077,6 +1077,11 @@ module.exports = function defineGrammar(dialect) {
         choice(
           $.primary_expression,
           $.match_expression,
+          $.yield_expression,
+          $.include_expression,
+          $.include_once_expression,
+          $.require_expression,
+          $.require_once_expression,
           field('arguments', $.arguments),
         ),
       ),
@@ -1162,8 +1167,11 @@ module.exports = function defineGrammar(dialect) {
         field('value', choice(
           $._unary_expression,
           $.match_expression,
+          $.yield_expression,
           $.include_expression,
           $.include_once_expression,
+          $.require_expression,
+          $.require_once_expression,
           $.error_suppression_expression,
         )),
       )),

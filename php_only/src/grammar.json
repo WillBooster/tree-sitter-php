@@ -6428,6 +6428,26 @@
               "name": "match_expression"
             },
             {
+              "type": "SYMBOL",
+              "name": "yield_expression"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "include_expression"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "include_once_expression"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "require_expression"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "require_once_expression"
+            },
+            {
               "type": "FIELD",
               "name": "arguments",
               "content": {
@@ -6863,11 +6883,23 @@
                 },
                 {
                   "type": "SYMBOL",
+                  "name": "yield_expression"
+                },
+                {
+                  "type": "SYMBOL",
                   "name": "include_expression"
                 },
                 {
                   "type": "SYMBOL",
                   "name": "include_once_expression"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "require_expression"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "require_once_expression"
                 },
                 {
                   "type": "SYMBOL",
