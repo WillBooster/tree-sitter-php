@@ -15,6 +15,7 @@
 // Exclude the whitespace characters recognized by extras from identifier ranges.
 const NAME_RANGE = String.raw`\u0080-\u009f\u00a1-\u200a\u200c-\u205f\u2061-\ufefe\uff00-\uffff`;
 const NAME_PATTERN = new RegExp(`[_a-zA-Z${NAME_RANGE}][_a-zA-Z${NAME_RANGE}\\d]*`);
+const VARIABLE_NAME_PATTERN = /[_a-zA-Z\u0080-\u{10ffff}][_a-zA-Z0-9\u0080-\u{10ffff}]*/u;
 
 const PREC = {
   COMMA: -1,
@@ -1651,7 +1652,7 @@ module.exports = function defineGrammar(dialect) {
         $.scoped_call_expression,
       ),
 
-      variable_name: $ => seq('$', alias(token.immediate(NAME_PATTERN), $.name)),
+      variable_name: $ => seq('$', alias(token.immediate(VARIABLE_NAME_PATTERN), $.name)),
 
       by_ref: $ => seq('&', $._variable),
 
