@@ -3312,6 +3312,94 @@ foo(\unset\X(), X\unset(), namespace\unset\X());
             (arguments)))))))
 
 ================================================================================
+Keyword expressions as cast and clone operands
+================================================================================
+
+<?php
+$a = (int)match($x) { 1 => 2, default => 3 };
+$b = clone match($x) { default => $y };
+function gen() {
+  $c = (int)yield 1;
+  $d = clone yield $e;
+  $f = (array)require 'g.php';
+  $h = clone include_once 'i.php';
+}
+
+---
+
+(program
+  (php_tag)
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (cast_expression
+        (cast_type)
+        (match_expression
+          (parenthesized_expression
+            (variable_name
+              (name)))
+          (match_block
+            (match_conditional_expression
+              (match_condition_list
+                (integer))
+              (integer))
+            (match_default_expression
+              (integer)))))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (clone_expression
+        (match_expression
+          (parenthesized_expression
+            (variable_name
+              (name)))
+          (match_block
+            (match_default_expression
+              (variable_name
+                (name))))))))
+  (function_definition
+    (name)
+    (formal_parameters)
+    (compound_statement
+      (expression_statement
+        (assignment_expression
+          (variable_name
+            (name))
+          (cast_expression
+            (cast_type)
+            (yield_expression
+              (array_element_initializer
+                (integer))))))
+      (expression_statement
+        (assignment_expression
+          (variable_name
+            (name))
+          (clone_expression
+            (yield_expression
+              (array_element_initializer
+                (variable_name
+                  (name)))))))
+      (expression_statement
+        (assignment_expression
+          (variable_name
+            (name))
+          (cast_expression
+            (cast_type)
+            (require_expression
+              (string
+                (string_content))))))
+      (expression_statement
+        (assignment_expression
+          (variable_name
+            (name))
+          (clone_expression
+            (include_once_expression
+              (string
+                (string_content)))))))))
+
+================================================================================
 Exponentiation binds tighter than casts and unary operators
 ================================================================================
 
@@ -3321,6 +3409,7 @@ $c = -$d ** 2;
 $e = @$f ** 2;
 $g = (int)$h + 1;
 $i = clone $j ** 2;
+$k = (int)match($l) { default => 2.5 } ** 2;
 
 ---
 
@@ -3372,4 +3461,19 @@ $i = clone $j ** 2;
         (clone_expression
           (variable_name
             (name)))
-        (integer)))))
+        (integer))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (cast_expression
+        (cast_type)
+        (binary_expression
+          (match_expression
+            (parenthesized_expression
+              (variable_name
+                (name)))
+            (match_block
+              (match_default_expression
+                (float))))
+          (integer))))))

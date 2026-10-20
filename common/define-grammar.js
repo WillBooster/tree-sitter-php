@@ -1076,6 +1076,12 @@ module.exports = function defineGrammar(dialect) {
         keyword('clone'),
         choice(
           $.primary_expression,
+          $.match_expression,
+          $.yield_expression,
+          $.include_expression,
+          $.include_once_expression,
+          $.require_expression,
+          $.require_once_expression,
           field('arguments', $.arguments),
         ),
       ),
@@ -1162,14 +1168,18 @@ module.exports = function defineGrammar(dialect) {
           $._unary_expression,
           // `**` binds tighter than casts: `(int)$a ** 2` casts `$a ** 2`.
           alias($._cast_exponential_expression, $.binary_expression),
+          $.match_expression,
+          $.yield_expression,
           $.include_expression,
           $.include_once_expression,
+          $.require_expression,
+          $.require_once_expression,
           $.error_suppression_expression,
         )),
       )),
 
       _cast_exponential_expression: $ => prec.right(PREC.EXPONENTIAL, seq(
-        field('left', $._unary_expression),
+        field('left', choice($._unary_expression, $.match_expression)),
         field('operator', '**'),
         field('right', $.expression),
       )),

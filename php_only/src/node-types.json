@@ -1330,11 +1330,27 @@
             "named": true
           },
           {
+            "type": "match_expression",
+            "named": true
+          },
+          {
             "type": "primary_expression",
             "named": true
           },
           {
+            "type": "require_expression",
+            "named": true
+          },
+          {
+            "type": "require_once_expression",
+            "named": true
+          },
+          {
             "type": "unary_op_expression",
+            "named": true
+          },
+          {
+            "type": "yield_expression",
             "named": true
           }
         ]
@@ -1597,7 +1613,31 @@
       "required": false,
       "types": [
         {
+          "type": "include_expression",
+          "named": true
+        },
+        {
+          "type": "include_once_expression",
+          "named": true
+        },
+        {
+          "type": "match_expression",
+          "named": true
+        },
+        {
           "type": "primary_expression",
+          "named": true
+        },
+        {
+          "type": "require_expression",
+          "named": true
+        },
+        {
+          "type": "require_once_expression",
+          "named": true
+        },
+        {
+          "type": "yield_expression",
           "named": true
         }
       ]
