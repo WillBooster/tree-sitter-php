@@ -113,9 +113,13 @@ static void deserialize(Scanner *scanner, const char *buffer, unsigned length) {
     assert(size == length);
 }
 
+static inline bool is_php_whitespace(int32_t character) {
+    return character == ' ' || character == '\t' || character == '\r' || character == '\n';
+}
+
 static inline bool scan_whitespace(TSLexer *lexer) {
     for (;;) {
-        while (iswspace(lexer->lookahead)) {
+        while (is_php_whitespace(lexer->lookahead)) {
             advance(lexer);
         }
 
@@ -150,13 +154,11 @@ static inline bool is_escapable_sequence(TSLexer *lexer) {
         return true;
     }
 
-    // Hex
     if (letter == 'x') {
         advance(lexer);
         return iswxdigit(lexer->lookahead);
     }
 
-    // Unicode
     if (letter == 'u') {
         return true; // We handle the case where this is not really an escape
                      // sequence in grammar.js - this is needed to support the
@@ -164,7 +166,6 @@ static inline bool is_escapable_sequence(TSLexer *lexer) {
                      // interpreted as characters and {$a} as a variable
     }
 
-    // Octal
     return iswdigit(lexer->lookahead) && lexer->lookahead >= '0' && lexer->lookahead <= '7';
 }
 
@@ -185,8 +186,6 @@ static inline bool scan_nowdoc_string(Scanner *scanner, TSLexer *lexer) {
         return false;
     }
 
-    // While PHP requires the nowdoc end tag to be the very first on a new line,
-    // there may be an arbitrary amount of whitespace before the closing token
     while (iswspace(lexer->lookahead)) {
         advance(lexer);
         has_consumed_content = true;
@@ -232,9 +231,6 @@ static bool scan_encapsed_part_string(Scanner *scanner, TSLexer *lexer, bool is_
     bool has_consumed_content = false;
 
     if (is_heredoc && scanner->heredocs.size > 0 && array_back(&scanner->heredocs)->can_close) {
-        // While PHP requires the heredoc end tag to be the very first on a new
-        // line, there may be an arbitrary amount of whitespace before the
-        // closing token However, we should not consume \r or \n
         while (iswspace(lexer->lookahead) && lexer->lookahead != '\r' && lexer->lookahead != '\n') {
             advance(lexer);
             has_consumed_content = true;
