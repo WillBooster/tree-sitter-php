@@ -9485,8 +9485,17 @@
           "value": "$"
         },
         {
-          "type": "SYMBOL",
-          "name": "_unreserved_identifier"
+          "type": "ALIAS",
+          "content": {
+            "type": "IMMEDIATE_TOKEN",
+            "content": {
+              "type": "PATTERN",
+              "value": "[_a-zA-Z\\u0080-\\u{10ffff}][_a-zA-Z0-9\\u0080-\\u{10ffff}]*",
+              "flags": "u"
+            }
+          },
+          "named": true,
+          "value": "name"
         }
       ]
     },
