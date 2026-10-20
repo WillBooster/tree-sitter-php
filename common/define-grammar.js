@@ -191,7 +191,7 @@ module.exports = function defineGrammar(dialect) {
 
       text: _ => repeat1(choice(
         token(prec(-1, /</)),
-        token(prec(1, /[^\s<][^<]*/)),
+        token(prec(1, /[^ \t\n\r<][^<]*/)),
       )),
 
       statement: $ => choice(

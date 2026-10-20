@@ -8858,11 +8858,10 @@ static const uint16_t ts_lex_advance_map_4[] = {
     }                                                               \
   }
 
-static const uint32_t ts_lex_ascii_set_0[] = {0xffffc1ff, 0xffffffff, 0xf8000001, 0xf8000001};
-static const uint32_t ts_lex_ascii_set_1[] = {0xffffffff, 0xefffffff, 0xf8000001, 0xf8000001};
-static const uint32_t ts_lex_ascii_set_2[] = {0xffffffff, 0xefffffff, 0x78000001, 0xf8000001};
-static const uint32_t ts_lex_ascii_set_3[] = {0x00002400, 0x80000000, 0x08000000, 0x00000000};
-static const uint32_t ts_lex_ascii_set_4[] = {0xffffffff, 0xec00ffff, 0x78000001, 0xf8000001};
+static const uint32_t ts_lex_ascii_set_0[] = {0xffffffff, 0xefffffff, 0xf8000001, 0xf8000001};
+static const uint32_t ts_lex_ascii_set_1[] = {0xffffffff, 0xefffffff, 0x78000001, 0xf8000001};
+static const uint32_t ts_lex_ascii_set_2[] = {0x00002400, 0x80000000, 0x08000000, 0x00000000};
+static const uint32_t ts_lex_ascii_set_3[] = {0xffffffff, 0xec00ffff, 0x78000001, 0xf8000001};
 static inline bool ts_lex_ascii_contains(const uint32_t *bits, int32_t lookahead) {
   return (uint32_t)lookahead < 128 && ((bits[lookahead / 32] >> (lookahead % 32)) & 1);
 }
@@ -8895,7 +8894,9 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
           lookahead == '\r' ||
           lookahead == ' ') SKIP(23);
       if (('1' <= lookahead && lookahead <= '9')) { lexer->get_position(lexer, &start_tags[0]); ADVANCE(137); }
-      if ((!eof && ts_lex_ascii_contains(ts_lex_ascii_set_0, lookahead))) { lexer->get_position(lexer, &start_tags[0]); ADVANCE(159); }
+      if ((!eof && lookahead <= '@') ||
+          ('[' <= lookahead && lookahead <= '`') ||
+          ('{' <= lookahead && lookahead <= 0x7f)) { lexer->get_position(lexer, &start_tags[0]); ADVANCE(159); }
       if (lookahead > '@') { lexer->get_position(lexer, &start_tags[0]); ADVANCE(158); }
       END_STATE();
     case 1:
@@ -9231,8 +9232,7 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
           lookahead == '\n' ||
           lookahead == '\r' ||
           lookahead == ' ') TS_LEX_REPEAT(true, ts_lex_state_10);
-      if (!eof &&
-          (lookahead < '\t' || '\r' < lookahead)) { lexer->get_position(lexer, &start_tags[0]); ADVANCE(159); }
+      if (!eof) { lexer->get_position(lexer, &start_tags[0]); ADVANCE(159); }
       END_STATE();
     case 11:
       ts_lex_state_11:
@@ -9547,7 +9547,9 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
           lookahead == '\r' ||
           lookahead == ' ') TS_LEX_REPEAT(true, ts_lex_state_23);
       if (('1' <= lookahead && lookahead <= '9')) { lexer->get_position(lexer, &start_tags[0]); ADVANCE(137); }
-      if ((!eof && ts_lex_ascii_contains(ts_lex_ascii_set_0, lookahead))) { lexer->get_position(lexer, &start_tags[0]); ADVANCE(159); }
+      if ((!eof && lookahead <= '@') ||
+          ('[' <= lookahead && lookahead <= '`') ||
+          ('{' <= lookahead && lookahead <= 0x7f)) { lexer->get_position(lexer, &start_tags[0]); ADVANCE(159); }
       if (lookahead > '@') { lexer->get_position(lexer, &start_tags[0]); ADVANCE(158); }
       END_STATE();
     case 24:
@@ -10149,7 +10151,7 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
       if (lookahead == 'E' ||
           lookahead == 'e') ADVANCE(145);
       if (('0' <= lookahead && lookahead <= '9')) TS_LEX_REPEAT(false, ts_lex_state_134);
-      if ((!eof && ts_lex_ascii_contains(ts_lex_ascii_set_1, lookahead))) ADVANCE(159);
+      if ((!eof && ts_lex_ascii_contains(ts_lex_ascii_set_0, lookahead))) ADVANCE(159);
       if (lookahead > '@') ADVANCE(158);
       END_STATE();
     case 135:
@@ -10243,7 +10245,7 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
       ACCEPT_TOKEN(aux_sym_text_token2);
       if (lookahead == '_') ADVANCE(154);
       if (('0' <= lookahead && lookahead <= '9')) TS_LEX_REPEAT(false, ts_lex_state_143);
-      if ((!eof && ts_lex_ascii_contains(ts_lex_ascii_set_1, lookahead))) ADVANCE(159);
+      if ((!eof && ts_lex_ascii_contains(ts_lex_ascii_set_0, lookahead))) ADVANCE(159);
       if (lookahead > '@') ADVANCE(158);
       END_STATE();
     case 144:
@@ -10261,7 +10263,7 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
       if (lookahead == '+' ||
           lookahead == '-') ADVANCE(155);
       if (('0' <= lookahead && lookahead <= '9')) ADVANCE(143);
-      if ((!eof && ts_lex_ascii_contains(ts_lex_ascii_set_2, lookahead))) ADVANCE(159);
+      if ((!eof && ts_lex_ascii_contains(ts_lex_ascii_set_1, lookahead))) ADVANCE(159);
       if (lookahead > '@') ADVANCE(158);
       END_STATE();
     case 146:
@@ -10302,7 +10304,7 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
     case 150:
       lexer->mark_start(lexer, &start_tags[0]);
       ACCEPT_TOKEN(aux_sym_text_token2);
-      if (ts_lex_ascii_contains(ts_lex_ascii_set_3, lookahead)) ADVANCE(159);
+      if (ts_lex_ascii_contains(ts_lex_ascii_set_2, lookahead)) ADVANCE(159);
       if (!eof &&
           lookahead != '<') ADVANCE(138);
       END_STATE();
@@ -10324,14 +10326,14 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
       lexer->mark_start(lexer, &start_tags[0]);
       ACCEPT_TOKEN(aux_sym_text_token2);
       if (('0' <= lookahead && lookahead <= '9')) ADVANCE(134);
-      if ((!eof && ts_lex_ascii_contains(ts_lex_ascii_set_2, lookahead))) ADVANCE(159);
+      if ((!eof && ts_lex_ascii_contains(ts_lex_ascii_set_1, lookahead))) ADVANCE(159);
       if (lookahead > '@') ADVANCE(158);
       END_STATE();
     case 154:
       lexer->mark_start(lexer, &start_tags[0]);
       ACCEPT_TOKEN(aux_sym_text_token2);
       if (('0' <= lookahead && lookahead <= '9')) ADVANCE(143);
-      if ((!eof && ts_lex_ascii_contains(ts_lex_ascii_set_2, lookahead))) ADVANCE(159);
+      if ((!eof && ts_lex_ascii_contains(ts_lex_ascii_set_1, lookahead))) ADVANCE(159);
       if (lookahead > '@') ADVANCE(158);
       END_STATE();
     case 155:
@@ -10361,7 +10363,7 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
       ts_lex_state_158:
       lexer->mark_start(lexer, &start_tags[0]);
       ACCEPT_TOKEN(aux_sym_text_token2);
-      if ((!eof && ts_lex_ascii_contains(ts_lex_ascii_set_4, lookahead))) ADVANCE(159);
+      if ((!eof && ts_lex_ascii_contains(ts_lex_ascii_set_3, lookahead))) ADVANCE(159);
       if (lookahead > '/' &&
           (lookahead < ':' || '@' < lookahead)) TS_LEX_REPEAT(false, ts_lex_state_158);
       END_STATE();
@@ -10934,7 +10936,7 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
     case 259:
       lexer->mark_start(lexer, &start_tags[0]);
       ACCEPT_TOKEN(aux_sym_string_content_token1);
-      if (ts_lex_ascii_contains(ts_lex_ascii_set_3, lookahead)) ADVANCE(260);
+      if (ts_lex_ascii_contains(ts_lex_ascii_set_2, lookahead)) ADVANCE(260);
       if (!eof &&
           lookahead != '\'' &&
           lookahead != '[' &&
