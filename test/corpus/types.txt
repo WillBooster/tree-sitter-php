@@ -353,7 +353,7 @@ Null type
 
 class Nil {
     public null $nil = null;
- 
+
     public function foo(null $v): null { }
 }
 
@@ -390,7 +390,7 @@ False type
 
 class Falsy {
     public false $nil = false;
- 
+
     public function foo(false $v): false { }
 }
 
@@ -427,7 +427,7 @@ True type
 
 class Truthy {
     public true $truthy = true;
- 
+
     public function foo(true $v): true {}
 }
 

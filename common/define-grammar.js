@@ -1730,13 +1730,7 @@ module.exports = function defineGrammar(dialect) {
         alias(choice(...IDENTIFIER_TYPE_KEYWORDS), $.name),
       ),
 
-      // PHP accepts identifier bytes above 127, so UTF-8 names extend beyond U+00FF.
-      // https://www.php.net/manual/en/language.variables.basics.php
-      name: _ => {
-        // We need to side step around the whitespace characters in the extras array.
-        const range = String.raw`\u0080-\u009f\u00a1-\u200a\u200c-\u205f\u2061-\ufefe\uff00-\uffff`;
-        return new RegExp(`[_a-zA-Z${range}][_a-zA-Z${range}\\d]*`);
-      },
+      name: _ => /[_a-zA-Z\u0080-\u{10ffff}][_a-zA-Z0-9\u0080-\u{10ffff}]*/u,
 
       comment: _ => token(choice(
         seq(

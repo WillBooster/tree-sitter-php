@@ -10804,7 +10804,8 @@
     },
     "name": {
       "type": "PATTERN",
-      "value": "[_a-zA-Z\\u0080-\\u009f\\u00a1-\\u200a\\u200c-\\u205f\\u2061-\\ufefe\\uff00-\\uffff][_a-zA-Z\\u0080-\\u009f\\u00a1-\\u200a\\u200c-\\u205f\\u2061-\\ufefe\\uff00-\\uffff\\d]*"
+      "value": "[_a-zA-Z\\u0080-\\u{10ffff}][_a-zA-Z0-9\\u0080-\\u{10ffff}]*",
+      "flags": "u"
     },
     "comment": {
       "type": "TOKEN",
