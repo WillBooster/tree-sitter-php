@@ -37,33 +37,44 @@ test.each(['php', 'php_only'])('%s preserves complete non-ASCII declaration and 
   }
 });
 
-test.each(['\v', '\f', '\u0085', '\u00A0', '\u200B', '\u2060', '\u2028', '\u2029'])(
-  'preserves outside-PHP text beginning with %j',
-  async (text) => {
-    const language = await Language.load(path.resolve('tree-sitter-php.wasm'));
-    const parser = new Parser().setLanguage(language);
-    try {
-      for (const source of [
-        `${text}<?php $following = 1;`,
-        `<?php $first = 1;?>${text}<?php $following = 1;`,
-        `<?php $first = 1;?>${text}`,
-        `<?php $first = 1;?>${text}\n`,
-      ]) {
-        const tree = parser.parse(source)!;
-        try {
-          expect(tree.rootNode.hasError, source).toBe(false);
-          expect(tree.rootNode.descendantsOfType('text').map((node) => node.text)).toEqual([
-            source.endsWith('\n') ? `${text}\n` : text,
-          ]);
-          if (source.includes('$following')) {
-            expect(tree.rootNode.lastNamedChild?.text).toBe('$following = 1;');
-          }
-        } finally {
-          tree.delete();
+test.each([
+  '\v',
+  '\f',
+  '\u0085',
+  '\u00A0',
+  '\u200B',
+  '\u2060',
+  '\u2028',
+  '\u2029',
+  '// raw template',
+  '// raw template\n',
+  '/* raw template */',
+  '# raw template',
+  '\v// raw template',
+])('preserves outside-PHP text beginning with %j', async (text) => {
+  const language = await Language.load(path.resolve('tree-sitter-php.wasm'));
+  const parser = new Parser().setLanguage(language);
+  try {
+    for (const source of [
+      `${text}<?php $following = 1;`,
+      `<?php $first = 1;?>${text}<?php $following = 1;`,
+      `<?php $first = 1;?>${text}`,
+      `<?php $first = 1;?>${text}\n`,
+    ]) {
+      const tree = parser.parse(source)!;
+      try {
+        expect(tree.rootNode.hasError, source).toBe(false);
+        expect(tree.rootNode.descendantsOfType('text').map((node) => node.text)).toEqual([
+          source === `<?php $first = 1;?>${text}\n` ? `${text}\n` : text,
+        ]);
+        if (source.includes('$following')) {
+          expect(tree.rootNode.lastNamedChild?.text).toBe('$following = 1;');
         }
+      } finally {
+        tree.delete();
       }
-    } finally {
-      parser.delete();
     }
+  } finally {
+    parser.delete();
   }
-);
+});

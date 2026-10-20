@@ -345,6 +345,17 @@ static bool scan_encapsed_part_string(Scanner *scanner, TSLexer *lexer, bool is_
     return false;
 }
 
+static bool scan_eof(TSLexer *lexer) {
+    while (is_php_whitespace(lexer->lookahead)) {
+        advance(lexer);
+    }
+    if (!lexer->eof(lexer)) {
+        return false;
+    }
+    lexer->result_symbol = EOF_TOKEN;
+    return true;
+}
+
 static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     const bool is_error_recovery = valid_symbols[SENTINEL_ERROR];
 
@@ -445,13 +456,12 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
         return true;
     }
 
-    if (!scan_whitespace(lexer)) {
-        return false;
+    if (valid_symbols[EOF_TOKEN]) {
+        return scan_eof(lexer);
     }
 
-    if (valid_symbols[EOF_TOKEN] && lexer->eof(lexer)) {
-        lexer->result_symbol = EOF_TOKEN;
-        return true;
+    if (!scan_whitespace(lexer)) {
+        return false;
     }
 
     if (valid_symbols[HEREDOC_START]) {
