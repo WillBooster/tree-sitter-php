@@ -43,8 +43,6 @@ const PREC = {
 };
 
 /**
- * The primary reserved keywords in PHP, but not in all contexts.
- *
  * @see https://www.php.net/manual/en/reserved.keywords.php
  */
 const BASE_RESERVED_KEYWORDS = [
@@ -65,8 +63,6 @@ const BASE_RESERVED_KEYWORD_SET = BASE_RESERVED_KEYWORDS.map(word => keyword(wor
 const IDENTIFIER_TYPE_KEYWORDS = ['bool', 'float', 'int', 'object', 'string'].map(word => keyword(word, false));
 
 /**
- * Other keywords that are reserved in PHP, and cannot be used as class names.
- *
  * @see https://www.php.net/manual/en/reserved.other-reserved-words.php
  */
 const OTHER_RESERVED_KEYWORD_SET = [
@@ -311,9 +307,10 @@ module.exports = function defineGrammar(dialect) {
       ),
 
       _class_const_namespace_identifier: $ => choice(
-        $._unreserved_identifier,
+        reserved('nothing', $.name),
+        alias($.primitive_type, $.name),
         alias($._static_type, $.name),
-        alias(choice(...BASE_RESERVED_KEYWORDS.filter(word => !['namespace', 'static', 'yield from'].includes(word)).map(word => keyword(word, false))), $.name),
+        alias(choice(...BASE_RESERVED_KEYWORDS.filter(word => !['callable', 'namespace', 'static', 'yield from'].includes(word)).map(word => keyword(word, false))), $.name),
       ),
 
       namespace_name: $ => seq(
@@ -1166,7 +1163,6 @@ module.exports = function defineGrammar(dialect) {
         field('type', $.cast_type),
         field('value', choice(
           $._unary_expression,
-          // `**` binds tighter than casts: `(int)$a ** 2` casts `$a ** 2`.
           alias($._cast_exponential_expression, $.binary_expression),
           $.match_expression,
           $.yield_expression,
@@ -1734,12 +1730,6 @@ module.exports = function defineGrammar(dialect) {
         alias(choice(...IDENTIFIER_TYPE_KEYWORDS), $.name),
       ),
 
-      // Note that PHP officially only supports the following character regex
-      // for identifiers: ^[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*$
-      // However, there is a "bug" in how PHP parses multi-byte characters that allows
-      // for a much larger range of characters to be used in identifiers.
-      //
-      // See: https://www.php.net/manual/en/language.variables.basics.php
       name: _ => {
         // We need to side step around the whitespace characters in the extras array.
         const range = String.raw`\u0080-\u009f\u00a1-\u200a\u200c-\u205f\u2061-\ufefe\uff00-\uffff`;
@@ -1766,9 +1756,6 @@ module.exports = function defineGrammar(dialect) {
 };
 
 /**
- * Creates a regex that matches the given word case-insensitively,
- * and will alias the regex to the word if aliasAsWord is true
- *
  * @param {string} word
  * @param {boolean} aliasAsWord
  *
@@ -1782,8 +1769,6 @@ function keyword(word, aliasAsWord = true) {
 }
 
 /**
- * Creates a rule to match one or more of the rules separated by a comma
- *
  * @param {Rule} rule
  *
  * @returns {SeqRule}
@@ -1793,8 +1778,6 @@ function commaSep1(rule) {
 }
 
 /**
- * Creates a rule to optionally match one or more of the rules separated by a comma
- *
  * @param {Rule} rule
  *
  * @returns {ChoiceRule}
@@ -1804,8 +1787,6 @@ function commaSep(rule) {
 }
 
 /**
- * Creates a rule to match one or more of the rules separated by a pipe
- *
  * @param {Rule} rule
  *
  * @returns {SeqRule}
@@ -1815,8 +1796,6 @@ function pipeSep1(rule) {
 }
 
 /**
- * Creates a rule to  match one or more of the rules separated by an ampersand
- *
  * @param {Rule} rule
  * @returns {SeqRule}
  */
