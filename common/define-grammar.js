@@ -124,7 +124,7 @@ module.exports = function defineGrammar(dialect) {
     extras: $ => {
       const extras = [
         $.comment,
-        /[\s\u00A0\u200B\u2060\uFEFF]/,
+        /[ \t\n\r]/,
       ];
 
       if (dialect === 'php') {

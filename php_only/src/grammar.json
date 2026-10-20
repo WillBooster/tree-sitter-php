@@ -10898,7 +10898,7 @@
     },
     {
       "type": "PATTERN",
-      "value": "[\\s\\u00A0\\u200B\\u2060\\uFEFF]"
+      "value": "[ \\t\\n\\r]"
     }
   ],
   "conflicts": [
