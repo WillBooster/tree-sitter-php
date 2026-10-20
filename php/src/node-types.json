@@ -1310,6 +1310,10 @@
         "required": true,
         "types": [
           {
+            "type": "binary_expression",
+            "named": true
+          },
+          {
             "type": "clone_expression",
             "named": true
           },

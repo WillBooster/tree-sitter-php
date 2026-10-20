@@ -3398,3 +3398,82 @@ function gen() {
             (include_once_expression
               (string
                 (string_content)))))))))
+
+================================================================================
+Exponentiation binds tighter than casts and unary operators
+================================================================================
+
+<?php
+$a = (int)$b ** 2;
+$c = -$d ** 2;
+$e = @$f ** 2;
+$g = (int)$h + 1;
+$i = clone $j ** 2;
+$k = (int)match($l) { default => 2.5 } ** 2;
+
+---
+
+(program
+  (php_tag)
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (cast_expression
+        (cast_type)
+        (binary_expression
+          (variable_name
+            (name))
+          (integer)))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (unary_op_expression
+        (binary_expression
+          (variable_name
+            (name))
+          (integer)))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (error_suppression_expression
+        (binary_expression
+          (variable_name
+            (name))
+          (integer)))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (binary_expression
+        (cast_expression
+          (cast_type)
+          (variable_name
+            (name)))
+        (integer))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (binary_expression
+        (clone_expression
+          (variable_name
+            (name)))
+        (integer))))
+  (expression_statement
+    (assignment_expression
+      (variable_name
+        (name))
+      (cast_expression
+        (cast_type)
+        (binary_expression
+          (match_expression
+            (parenthesized_expression
+              (variable_name
+                (name)))
+            (match_block
+              (match_default_expression
+                (float))))
+          (integer))))))
