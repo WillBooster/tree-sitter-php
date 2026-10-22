@@ -8,6 +8,49 @@ const ImportTypes = ['', 'function ', 'const '];
 await Parser.init();
 
 test.each(['php', 'php_only'])(
+  '%s distinguishes namespace-relative imports from namespace segments',
+  async (dialect) => {
+    const parser = new Parser().setLanguage(await Language.load(path.resolve(`tree-sitter-${dialect}.wasm`)));
+    try {
+      for (const statement of [
+        String.raw`use namespace\Target;`,
+        String.raw`use NaMeSpAcE\Prefix\Target;`,
+        String.raw`use Prefix\{namespace\Target};`,
+      ]) {
+        const tree = parser.parse(`<?php ${statement}`)!;
+        try {
+          expect(tree.rootNode.hasError, statement).toBe(true);
+        } finally {
+          tree.delete();
+        }
+      }
+      for (const statement of [
+        String.raw`use Prefix\namespace\Target;`,
+        String.raw`use \namespace\Target;`,
+        String.raw`use Prefix\{Nested\namespace\Target};`,
+      ]) {
+        const source = `<?php ${statement} $following = 1;`;
+        const tree = parser.parse(source)!;
+        try {
+          expect(tree.rootNode.hasError, statement).toBe(false);
+          expect(tree.rootNode.descendantsOfType('namespace_use_declaration').map((node) => node.text)).toEqual([
+            statement,
+          ]);
+          const names = tree.rootNode.descendantsOfType('name');
+          expect(names.map((node) => node.text)).toContain('namespace');
+          for (const node of names) expect(source.slice(node.startIndex, node.endIndex)).toBe(node.text);
+          expect(tree.rootNode.lastNamedChild?.text).toBe('$following = 1;');
+        } finally {
+          tree.delete();
+        }
+      }
+    } finally {
+      parser.delete();
+    }
+  }
+);
+
+test.each(['php', 'php_only'])(
   '%s preserves comments and whitespace around a final group separator',
   async (dialect) => {
     const parser = new Parser().setLanguage(await Language.load(path.resolve(`tree-sitter-${dialect}.wasm`)));
