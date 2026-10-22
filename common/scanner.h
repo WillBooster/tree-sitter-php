@@ -371,7 +371,9 @@ static bool scan_eof(TSLexer *lexer) {
     return true;
 }
 
-static bool scan_qualified_keyword(TSLexer *lexer);
+static const char *qualified_keyword_start(TSLexer *lexer);
+
+static bool scan_qualified_keyword(TSLexer *lexer, const char *word);
 
 static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     if (valid_symbols[SENTINEL_ERROR]) {
@@ -429,8 +431,9 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
         return true;
     }
 
-    if (valid_symbols[QUALIFIED_KEYWORD]) {
-        return scan_qualified_keyword(lexer);
+    const char *keyword = valid_symbols[QUALIFIED_KEYWORD] ? qualified_keyword_start(lexer) : NULL;
+    if (keyword) {
+        return scan_qualified_keyword(lexer, keyword);
     }
 
     if (valid_symbols[EOF_TOKEN]) {
@@ -460,44 +463,35 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
         return true;
     }
 
-    if (valid_symbols[AUTOMATIC_SEMICOLON]) {
-        lexer->result_symbol = AUTOMATIC_SEMICOLON;
-
-        if (lexer->lookahead != '?') {
-            return false;
-        }
-
-        advance(lexer);
-
-        return lexer->lookahead == '>';
+    if (!valid_symbols[AUTOMATIC_SEMICOLON] || lexer->lookahead != '?') {
+        return false;
     }
-
-    return false;
+    lexer->result_symbol = AUTOMATIC_SEMICOLON;
+    advance(lexer);
+    return lexer->lookahead == '>';
 }
 
-static bool scan_qualified_keyword(TSLexer *lexer) {
+static const char *qualified_keyword_start(TSLexer *lexer) {
     while (is_php_whitespace(lexer->lookahead)) {
         skip(lexer);
     }
 
-    const char *word;
     switch (lexer->lookahead) {
         case 'a':
         case 'A':
-            word = "array";
-            break;
+            return "array";
         case 'f':
         case 'F':
-            word = "function";
-            break;
+            return "function";
         case 'm':
         case 'M':
-            word = "match";
-            break;
+            return "match";
         default:
-            return false;
+            return NULL;
     }
+}
 
+static bool scan_qualified_keyword(TSLexer *lexer, const char *word) {
     for (; *word; word++) {
         if (towlower(lexer->lookahead) != *word) {
             return false;
