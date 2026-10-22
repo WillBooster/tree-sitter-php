@@ -118,6 +118,7 @@ module.exports = function defineGrammar(dialect) {
       $.heredoc_end,
       $.nowdoc_string,
       $._heredoc_line_start,
+      $._qualified_keyword,
       $.sentinel_error, // Unused token used to indicate error recovery mode
     ],
 
@@ -318,7 +319,10 @@ module.exports = function defineGrammar(dialect) {
       ),
 
       namespace_name: $ => seq(
-        $._unreserved_identifier,
+        choice(
+          $._unreserved_identifier,
+          alias($._qualified_keyword, $.name),
+        ),
         repeat(seq('\\', $._unreserved_identifier)),
       ),
 

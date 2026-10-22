@@ -18,7 +18,24 @@ enum TokenType {
     HEREDOC_END,
     NOWDOC_STRING,
     HEREDOC_LINE_START,
+    QUALIFIED_KEYWORD,
     SENTINEL_ERROR, // Unused token used to indicate error recovery mode
+};
+
+typedef struct {
+    enum TokenType symbol;
+    bool after_variable;
+    bool heredoc;
+    bool execution;
+} StringToken;
+
+static const StringToken STRING_TOKENS[] = {
+    {ENCAPSED_STRING_CHARS_AFTER_VARIABLE, true, false, false},
+    {ENCAPSED_STRING_CHARS, false, false, false},
+    {EXECUTION_STRING_CHARS_AFTER_VARIABLE, true, false, true},
+    {EXECUTION_STRING_CHARS, false, false, true},
+    {ENCAPSED_STRING_CHARS_AFTER_VARIABLE_HEREDOC, true, true, false},
+    {ENCAPSED_STRING_CHARS_HEREDOC, false, true, false},
 };
 
 typedef Array(int32_t) String;
@@ -46,7 +63,6 @@ typedef struct {
     };
 
 typedef struct {
-    bool has_leading_whitespace;
     Array(Heredoc) heredocs;
 } Scanner;
 
@@ -80,7 +96,6 @@ static unsigned serialize(Scanner *scanner, char *buffer) {
 
 static void deserialize(Scanner *scanner, const char *buffer, unsigned length) {
     unsigned size = 0;
-    scanner->has_leading_whitespace = false;
 
     for (uint32_t i = 0; i < scanner->heredocs.size; i++) {
         array_delete(&scanner->heredocs.contents[i].word);
@@ -356,14 +371,12 @@ static bool scan_eof(TSLexer *lexer) {
     return true;
 }
 
-static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
-    const bool is_error_recovery = valid_symbols[SENTINEL_ERROR];
+static bool scan_qualified_keyword(TSLexer *lexer);
 
-    if (is_error_recovery) {
+static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
+    if (valid_symbols[SENTINEL_ERROR]) {
         return false;
     }
-
-    scanner->has_leading_whitespace = false;
 
     lexer->mark_end(lexer);
 
@@ -378,52 +391,12 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
         return true;
     }
 
-    if (valid_symbols[ENCAPSED_STRING_CHARS_AFTER_VARIABLE]) {
-        lexer->result_symbol = ENCAPSED_STRING_CHARS_AFTER_VARIABLE;
-        return scan_encapsed_part_string(scanner, lexer,
-                                         /* is_after_variable */ true,
-                                         /* is_heredoc */ false,
-                                         /* is_execution_string */ false);
-    }
-
-    if (valid_symbols[ENCAPSED_STRING_CHARS]) {
-        lexer->result_symbol = ENCAPSED_STRING_CHARS;
-        return scan_encapsed_part_string(scanner, lexer,
-                                         /* is_after_variable */ false,
-                                         /* is_heredoc */ false,
-                                         /* is_execution_string */ false);
-    }
-
-    if (valid_symbols[EXECUTION_STRING_CHARS_AFTER_VARIABLE]) {
-        lexer->result_symbol = EXECUTION_STRING_CHARS_AFTER_VARIABLE;
-        return scan_encapsed_part_string(scanner, lexer,
-                                         /* is_after_variable */ true,
-                                         /* is_heredoc */ false,
-                                         /* is_execution_string */ true);
-    }
-
-    if (valid_symbols[EXECUTION_STRING_CHARS]) {
-        lexer->result_symbol = EXECUTION_STRING_CHARS;
-        return scan_encapsed_part_string(scanner, lexer,
-                                         /* is_after_variable */ false,
-                                         /* is_heredoc */ false,
-                                         /* is_execution_string */ true);
-    }
-
-    if (valid_symbols[ENCAPSED_STRING_CHARS_AFTER_VARIABLE_HEREDOC]) {
-        lexer->result_symbol = ENCAPSED_STRING_CHARS_AFTER_VARIABLE_HEREDOC;
-        return scan_encapsed_part_string(scanner, lexer,
-                                         /* is_after_variable */ true,
-                                         /* is_heredoc */ true,
-                                         /* is_execution_string */ false);
-    }
-
-    if (valid_symbols[ENCAPSED_STRING_CHARS_HEREDOC]) {
-        lexer->result_symbol = ENCAPSED_STRING_CHARS_HEREDOC;
-        return scan_encapsed_part_string(scanner, lexer,
-                                         /* is_after_variable */ false,
-                                         /* is_heredoc */ true,
-                                         /* is_execution_string */ false);
+    for (size_t i = 0; i < sizeof(STRING_TOKENS) / sizeof(STRING_TOKENS[0]); i++) {
+        const StringToken *token = &STRING_TOKENS[i];
+        if (valid_symbols[token->symbol]) {
+            lexer->result_symbol = token->symbol;
+            return scan_encapsed_part_string(scanner, lexer, token->after_variable, token->heredoc, token->execution);
+        }
     }
 
     if (valid_symbols[NOWDOC_STRING]) {
@@ -454,6 +427,10 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
         Heredoc doc = array_pop(&scanner->heredocs);
         array_delete(&doc.word);
         return true;
+    }
+
+    if (valid_symbols[QUALIFIED_KEYWORD]) {
+        return scan_qualified_keyword(lexer);
     }
 
     if (valid_symbols[EOF_TOKEN]) {
@@ -496,6 +473,44 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     }
 
     return false;
+}
+
+static bool scan_qualified_keyword(TSLexer *lexer) {
+    while (is_php_whitespace(lexer->lookahead)) {
+        skip(lexer);
+    }
+
+    const char *word;
+    switch (lexer->lookahead) {
+        case 'a':
+        case 'A':
+            word = "array";
+            break;
+        case 'f':
+        case 'F':
+            word = "function";
+            break;
+        case 'm':
+        case 'M':
+            word = "match";
+            break;
+        default:
+            return false;
+    }
+
+    for (; *word; word++) {
+        if (towlower(lexer->lookahead) != *word) {
+            return false;
+        }
+        advance(lexer);
+    }
+
+    if (lexer->lookahead != '\\') {
+        return false;
+    }
+    lexer->mark_end(lexer);
+    lexer->result_symbol = QUALIFIED_KEYWORD;
+    return true;
 }
 
 static inline void *external_scanner_create() {

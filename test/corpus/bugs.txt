@@ -597,3 +597,51 @@ function f(static\X $x): static\X {}
           (name))
         (name)))
     (compound_statement)))
+
+=========================================
+Qualified keyword expression names
+=========================================
+
+<?php
+
+consume(array\Target, function\Target, match\Target);
+$value = array\call();
+use function\Target;
+use function \other;
+
+---
+
+(program
+  (php_tag)
+  (expression_statement
+    (function_call_expression
+      (name)
+      (arguments
+        (argument
+          (qualified_name
+            (namespace_name (name))
+            (name)))
+        (argument
+          (qualified_name
+            (namespace_name (name))
+            (name)))
+        (argument
+          (qualified_name
+            (namespace_name (name))
+            (name))))))
+  (expression_statement
+    (assignment_expression
+      (variable_name (name))
+      (function_call_expression
+        (qualified_name
+          (namespace_name (name))
+          (name))
+        (arguments))))
+  (namespace_use_declaration
+    (namespace_use_clause
+      (qualified_name
+        (namespace_name (name))
+        (name))))
+  (namespace_use_declaration
+    (namespace_use_clause
+      (qualified_name (name)))))
