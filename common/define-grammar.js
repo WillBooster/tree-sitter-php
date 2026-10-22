@@ -475,7 +475,7 @@ module.exports = function defineGrammar(dialect) {
         optional(field('attributes', $.attribute_list)),
         repeat($._modifier),
         keyword('function'),
-        optional($.reference_modifier),
+        optional(alias('&', $.reference_modifier)),
         field('name', $._unreserved_identifier),
         field('parameters', $.formal_parameters),
         optional($._return_type),

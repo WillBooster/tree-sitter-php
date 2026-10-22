@@ -2390,8 +2390,13 @@
           "type": "CHOICE",
           "members": [
             {
-              "type": "SYMBOL",
-              "name": "reference_modifier"
+              "type": "ALIAS",
+              "content": {
+                "type": "STRING",
+                "value": "&"
+              },
+              "named": true,
+              "value": "reference_modifier"
             },
             {
               "type": "BLANK"
