@@ -1165,8 +1165,22 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "SYMBOL",
-          "name": "_unreserved_identifier"
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_unreserved_identifier"
+            },
+            {
+              "type": "ALIAS",
+              "content": {
+                "type": "SYMBOL",
+                "name": "_qualified_keyword"
+              },
+              "named": true,
+              "value": "name"
+            }
+          ]
         },
         {
           "type": "REPEAT",
@@ -11012,6 +11026,10 @@
     {
       "type": "SYMBOL",
       "name": "_heredoc_line_start"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_qualified_keyword"
     },
     {
       "type": "SYMBOL",
