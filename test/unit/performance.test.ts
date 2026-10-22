@@ -37,22 +37,18 @@ for (const [grammar, prefix] of Object.entries(Prefixes)) {
     test('parses interpolation-heavy heredoc lines in linear time', { timeout: 60_000 }, () => {
       for (const fragment of ['$foo x ', '{$foo}SQL.PHP_EOL ']) {
         const source = (count: number): string => `${prefix}$a = <<<SQL\n${fragment.repeat(count)}\nSQL;\n`;
-        const small = source(200);
-        const large = source(2000);
-        parseCpuTime(parser, large, false);
-        parseCpuTime(parser, large, false);
-        let repetitions = 1;
-        while (parseCpuTime(parser, small, false, repetitions) < 10_000) {
-          repetitions *= 2;
-        }
-        let smallFastest = Infinity;
-        let largeFastest = Infinity;
-        for (let run = 0; run < 5; run++) {
-          smallFastest = Math.min(smallFastest, parseCpuTime(parser, small, false, repetitions));
-          largeFastest = Math.min(largeFastest, parseCpuTime(parser, large, false, repetitions));
-        }
-        expect(largeFastest / smallFastest, fragment).toBeLessThan(18);
+        expectLinearCpuTime(parser, source(200), source(2000), false, fragment);
       }
+    });
+
+    test.each([
+      ['qualified', 'array\\', 'Target'],
+      ['grouped', 'array\\', '{Target}'],
+      ['absolute qualified', '\\Foo\\', 'Target'],
+      ['absolute grouped', '\\Foo\\', '{Target}'],
+    ])('parses long %s import paths in linear time', { timeout: 60_000 }, (_name, start, ending) => {
+      const source = (count: number): string => `${prefix}use ${start}${'Segment\\'.repeat(count)}${ending};`;
+      expectLinearCpuTime(parser, source(200), source(2000), false);
     });
 
     // Thread CPU time excludes parallel test processes and background Wasm compilation.
@@ -62,21 +58,31 @@ for (const [grammar, prefix] of Object.entries(Prefixes)) {
     ])('recovers from repeated %s lines in linear time', { timeout: 60_000 }, (_name, line, count) => {
       const small = prefix + line.repeat(count);
       const large = prefix + line.repeat(count * 10);
-      parseCpuTime(parser, large);
-      parseCpuTime(parser, large);
-      let repetitions = 1;
-      while (parseCpuTime(parser, small, true, repetitions) < 10_000) {
-        repetitions *= 2;
-      }
-      let smallFastest = Infinity;
-      let largeFastest = Infinity;
-      for (let run = 0; run < 5; run++) {
-        smallFastest = Math.min(smallFastest, parseCpuTime(parser, small, true, repetitions));
-        largeFastest = Math.min(largeFastest, parseCpuTime(parser, large, true, repetitions));
-      }
-      expect(largeFastest / smallFastest).toBeLessThan(18);
+      expectLinearCpuTime(parser, small, large);
     });
   });
+}
+
+function expectLinearCpuTime(
+  parser: Parser,
+  small: string,
+  large: string,
+  expectedError = true,
+  context?: string
+): void {
+  parseCpuTime(parser, large, expectedError);
+  parseCpuTime(parser, large, expectedError);
+  let repetitions = 1;
+  while (parseCpuTime(parser, small, expectedError, repetitions) < 10_000) {
+    repetitions *= 2;
+  }
+  let smallFastest = Infinity;
+  let largeFastest = Infinity;
+  for (let run = 0; run < 5; run++) {
+    smallFastest = Math.min(smallFastest, parseCpuTime(parser, small, expectedError, repetitions));
+    largeFastest = Math.min(largeFastest, parseCpuTime(parser, large, expectedError, repetitions));
+  }
+  expect(largeFastest / smallFastest, context).toBeLessThan(18);
 }
 
 function parseCpuTime(parser: Parser, source: string, expectedError = true, repetitions = 1): number {

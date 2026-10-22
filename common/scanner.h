@@ -19,6 +19,8 @@ enum TokenType {
     NOWDOC_STRING,
     HEREDOC_LINE_START,
     QUALIFIED_KEYWORD,
+    NAMESPACE_USE_PREFIX,
+    NAMESPACE_USE_SEPARATOR,
     SENTINEL_ERROR, // Unused token used to indicate error recovery mode
 };
 
@@ -67,6 +69,8 @@ typedef struct {
 } Scanner;
 
 typedef enum { Error, End } ScanContentResult;
+
+typedef enum { NoPrefix, PrefixRejected, PrefixAccepted } PrefixScanResult;
 
 static inline void advance(TSLexer *lexer) { lexer->advance(lexer, false); }
 
@@ -153,6 +157,10 @@ static inline bool scan_whitespace(TSLexer *lexer) {
             return true;
         }
     }
+}
+
+static inline bool is_valid_name_start(TSLexer *lexer) {
+    return lexer->lookahead == '_' || lexer->lookahead >= 0x80 || iswalpha(lexer->lookahead);
 }
 
 static inline bool is_valid_name_char(TSLexer *lexer) {
@@ -375,6 +383,20 @@ static const char *qualified_keyword_start(TSLexer *lexer);
 
 static bool scan_qualified_keyword(TSLexer *lexer, const char *word);
 
+static PrefixScanResult scan_name_prefix(TSLexer *lexer, const bool *valid_symbols);
+
+static bool scan_namespace_use_prefix(TSLexer *lexer);
+
+static bool scan_namespace_use_separator(TSLexer *lexer);
+
+static bool scan_namespace_use_gap(TSLexer *lexer);
+
+static bool scan_namespace_use_comment(TSLexer *lexer);
+
+static bool scan_namespace_use_line_comment(TSLexer *lexer);
+
+static bool scan_namespace_use_block_comment(TSLexer *lexer);
+
 static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     if (valid_symbols[SENTINEL_ERROR]) {
         return false;
@@ -431,9 +453,9 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
         return true;
     }
 
-    const char *keyword = valid_symbols[QUALIFIED_KEYWORD] ? qualified_keyword_start(lexer) : NULL;
-    if (keyword) {
-        return scan_qualified_keyword(lexer, keyword);
+    PrefixScanResult prefix = scan_name_prefix(lexer, valid_symbols);
+    if (prefix != NoPrefix) {
+        return prefix == PrefixAccepted;
     }
 
     if (valid_symbols[EOF_TOKEN]) {
@@ -469,6 +491,127 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     lexer->result_symbol = AUTOMATIC_SEMICOLON;
     advance(lexer);
     return lexer->lookahead == '>';
+}
+
+static PrefixScanResult scan_name_prefix(TSLexer *lexer, const bool *valid_symbols) {
+    if (valid_symbols[NAMESPACE_USE_SEPARATOR] || valid_symbols[NAMESPACE_USE_PREFIX]) {
+        while (is_php_whitespace(lexer->lookahead)) {
+            skip(lexer);
+        }
+    }
+    if (valid_symbols[NAMESPACE_USE_SEPARATOR] && lexer->lookahead == '\\') {
+        return scan_namespace_use_separator(lexer) ? PrefixAccepted : PrefixRejected;
+    }
+    if (valid_symbols[NAMESPACE_USE_PREFIX] && is_valid_name_start(lexer)) {
+        return scan_namespace_use_prefix(lexer) ? PrefixAccepted : PrefixRejected;
+    }
+    if (!valid_symbols[QUALIFIED_KEYWORD]) {
+        return NoPrefix;
+    }
+    const char *keyword = qualified_keyword_start(lexer);
+    if (!keyword) {
+        return NoPrefix;
+    }
+    return scan_qualified_keyword(lexer, keyword) ? PrefixAccepted : PrefixRejected;
+}
+
+static bool scan_namespace_use_prefix(TSLexer *lexer) {
+    const char relative_prefix[] = "namespace";
+    size_t length = 0;
+    bool relative = true;
+    while (is_valid_name_char(lexer)) {
+        if (length >= sizeof(relative_prefix) - 1 || towlower(lexer->lookahead) != relative_prefix[length]) {
+            relative = false;
+        }
+        length++;
+        advance(lexer);
+    }
+    if ((relative && length == sizeof(relative_prefix) - 1) || lexer->lookahead != '\\') {
+        return false;
+    }
+    lexer->mark_end(lexer);
+    advance(lexer);
+    if (!is_valid_name_start(lexer)) {
+        return false;
+    }
+    lexer->result_symbol = NAMESPACE_USE_PREFIX;
+    return true;
+}
+
+static bool scan_namespace_use_separator(TSLexer *lexer) {
+    advance(lexer);
+    lexer->mark_end(lexer);
+    if (!is_valid_name_start(lexer)) {
+        return false;
+    }
+    while (is_valid_name_char(lexer)) {
+        advance(lexer);
+    }
+    if (!scan_namespace_use_gap(lexer) || lexer->lookahead != '\\') {
+        return false;
+    }
+    lexer->result_symbol = NAMESPACE_USE_SEPARATOR;
+    return true;
+}
+
+static bool scan_namespace_use_gap(TSLexer *lexer) {
+    for (;;) {
+        while (is_php_whitespace(lexer->lookahead)) {
+            advance(lexer);
+        }
+        if (lexer->lookahead != '/' && lexer->lookahead != '#') {
+            return true;
+        }
+        if (!scan_namespace_use_comment(lexer)) {
+            return false;
+        }
+    }
+}
+
+static bool scan_namespace_use_comment(TSLexer *lexer) {
+    if (lexer->lookahead == '#') {
+        advance(lexer);
+        return scan_namespace_use_line_comment(lexer);
+    }
+    advance(lexer);
+    if (lexer->lookahead == '/') {
+        advance(lexer);
+        return scan_namespace_use_line_comment(lexer);
+    }
+    if (lexer->lookahead != '*') {
+        return false;
+    }
+    advance(lexer);
+    return scan_namespace_use_block_comment(lexer);
+}
+
+static bool scan_namespace_use_line_comment(TSLexer *lexer) {
+    while (lexer->lookahead != 0 && lexer->lookahead != '\r' && lexer->lookahead != '\n') {
+        if (lexer->lookahead == '?') {
+            advance(lexer);
+            if (lexer->lookahead == '>') {
+                return false;
+            }
+        } else {
+            advance(lexer);
+        }
+    }
+    return true;
+}
+
+static bool scan_namespace_use_block_comment(TSLexer *lexer) {
+    while (lexer->lookahead != 0) {
+        if (lexer->lookahead == '*') {
+            advance(lexer);
+            if (lexer->lookahead == '/') {
+                advance(lexer);
+                return true;
+            }
+        } else {
+            advance(lexer);
+        }
+    }
+    return false;
 }
 
 static const char *qualified_keyword_start(TSLexer *lexer) {

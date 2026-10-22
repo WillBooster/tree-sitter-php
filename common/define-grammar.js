@@ -119,6 +119,8 @@ module.exports = function defineGrammar(dialect) {
       $.nowdoc_string,
       $._heredoc_line_start,
       $._qualified_keyword,
+      $._namespace_use_prefix,
+      $._namespace_use_separator,
       $.sentinel_error, // Unused token used to indicate error recovery mode
     ],
 
@@ -273,11 +275,29 @@ module.exports = function defineGrammar(dialect) {
 
       namespace_use_clause: $ => seq(
         field('type', optional($._namespace_use_type)),
-        choice($._identifier, $.qualified_name),
+        choice($._identifier, alias($._namespace_use_qualified_name, $.qualified_name)),
         optional(seq(keyword('as'), field('alias', $._identifier))),
       ),
 
       _namespace_use_type: _ => choice(keyword('function'), keyword('const')),
+
+      _namespace_use_qualified_name: $ => seq(
+        field('prefix', choice(
+          seq('\\', optional(seq(alias($._namespace_use_absolute_namespace_name, $.namespace_name), '\\'))),
+          seq(alias($._namespace_use_namespace_name, $.namespace_name), '\\'),
+        )),
+        $._unreserved_identifier,
+      ),
+
+      _namespace_use_namespace_name: $ => seq(
+        choice($._identifier, alias($._namespace_use_prefix, $.name)),
+        repeat(seq(alias($._namespace_use_separator, '\\'), $._unreserved_identifier)),
+      ),
+
+      _namespace_use_absolute_namespace_name: $ => seq(
+        $._unreserved_identifier,
+        repeat(seq(alias($._namespace_use_separator, '\\'), $._unreserved_identifier)),
+      ),
 
       qualified_name: $ => seq(
         field('prefix', seq(optional('\\'), optional($.namespace_name), '\\')),
@@ -328,8 +348,10 @@ module.exports = function defineGrammar(dialect) {
 
       _namespace_use_group: $ => seq(
         field('type', optional($._namespace_use_type)),
-        optional('\\'),
-        $.namespace_name,
+        choice(
+          seq('\\', alias($._namespace_use_absolute_namespace_name, $.namespace_name)),
+          alias($._namespace_use_namespace_name, $.namespace_name),
+        ),
         '\\',
         field('body', $.namespace_use_group),
       ),
