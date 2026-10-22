@@ -2390,8 +2390,13 @@
           "type": "CHOICE",
           "members": [
             {
-              "type": "SYMBOL",
-              "name": "reference_modifier"
+              "type": "ALIAS",
+              "content": {
+                "type": "STRING",
+                "value": "&"
+              },
+              "named": true,
+              "value": "reference_modifier"
             },
             {
               "type": "BLANK"
@@ -4003,8 +4008,9 @@
           "flags": "i"
         },
         {
-          "type": "STRING",
-          "value": "array"
+          "type": "PATTERN",
+          "value": "array",
+          "flags": "i"
         },
         {
           "type": "PATTERN",
@@ -11064,6 +11070,11 @@
       },
       {
         "type": "PATTERN",
+        "value": "array",
+        "flags": "i"
+      },
+      {
+        "type": "PATTERN",
         "value": "as",
         "flags": "i"
       },
@@ -11377,6 +11388,11 @@
       {
         "type": "PATTERN",
         "value": "and",
+        "flags": "i"
+      },
+      {
+        "type": "PATTERN",
+        "value": "array",
         "flags": "i"
       },
       {
