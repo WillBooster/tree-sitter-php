@@ -352,3 +352,75 @@ function ARRAY() {}
 ---
 
 (ERROR)
+
+===============================================
+Reserved bare class import
+:error
+===============================================
+
+<?php
+use array;
+
+---
+
+(ERROR)
+
+===============================================
+Reserved bare function import
+:error
+===============================================
+
+<?php
+use function ARRAY;
+
+---
+
+(ERROR)
+
+===============================================
+Reserved bare constant import with alias
+:error
+===============================================
+
+<?php
+use const ArRaY as Alias;
+
+---
+
+(ERROR)
+
+===============================================
+Reserved bare grouped import prefix
+:error
+===============================================
+
+<?php
+use array\{Target};
+
+---
+
+(ERROR)
+
+===============================================
+Reserved bare grouped function import
+:error
+===============================================
+
+<?php
+use Prefix\{function array as Alias};
+
+---
+
+(ERROR)
+
+===============================================
+Reserved bare grouped constant import
+:error
+===============================================
+
+<?php
+use Prefix\{const array as Alias};
+
+---
+
+(ERROR)

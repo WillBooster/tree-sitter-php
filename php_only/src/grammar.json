@@ -516,8 +516,13 @@
               "name": "_identifier"
             },
             {
-              "type": "SYMBOL",
-              "name": "qualified_name"
+              "type": "ALIAS",
+              "content": {
+                "type": "SYMBOL",
+                "name": "_namespace_use_qualified_name"
+              },
+              "named": true,
+              "value": "qualified_name"
             }
           ]
         },
@@ -576,6 +581,116 @@
           },
           "named": false,
           "value": "const"
+        }
+      ]
+    },
+    "_namespace_use_qualified_name": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "FIELD",
+          "name": "prefix",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "STRING",
+                    "value": "\\"
+                  },
+                  {
+                    "type": "CHOICE",
+                    "members": [
+                      {
+                        "type": "SEQ",
+                        "members": [
+                          {
+                            "type": "SYMBOL",
+                            "name": "namespace_name"
+                          },
+                          {
+                            "type": "STRING",
+                            "value": "\\"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "BLANK"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "SYMBOL",
+                      "name": "_namespace_use_namespace_name"
+                    },
+                    "named": true,
+                    "value": "namespace_name"
+                  },
+                  {
+                    "type": "STRING",
+                    "value": "\\"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_unreserved_identifier"
+        }
+      ]
+    },
+    "_namespace_use_namespace_name": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_identifier"
+            },
+            {
+              "type": "ALIAS",
+              "content": {
+                "type": "SYMBOL",
+                "name": "_namespace_use_prefix"
+              },
+              "named": true,
+              "value": "name"
+            }
+          ]
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "ALIAS",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "_namespace_use_separator"
+                },
+                "named": false,
+                "value": "\\"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "_unreserved_identifier"
+              }
+            ]
+          }
         }
       ]
     },
@@ -1218,17 +1333,28 @@
           "type": "CHOICE",
           "members": [
             {
-              "type": "STRING",
-              "value": "\\"
+              "type": "SEQ",
+              "members": [
+                {
+                  "type": "STRING",
+                  "value": "\\"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "namespace_name"
+                }
+              ]
             },
             {
-              "type": "BLANK"
+              "type": "ALIAS",
+              "content": {
+                "type": "SYMBOL",
+                "name": "_namespace_use_namespace_name"
+              },
+              "named": true,
+              "value": "namespace_name"
             }
           ]
-        },
-        {
-          "type": "SYMBOL",
-          "name": "namespace_name"
         },
         {
           "type": "STRING",
@@ -11027,6 +11153,14 @@
     {
       "type": "SYMBOL",
       "name": "_qualified_keyword"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_namespace_use_prefix"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_namespace_use_separator"
     },
     {
       "type": "SYMBOL",
