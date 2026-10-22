@@ -12,19 +12,21 @@ test.each(['php', 'php_only'])(
   async (dialect) => {
     const parser = new Parser().setLanguage(await Language.load(path.resolve(`tree-sitter-${dialect}.wasm`)));
     try {
-      for (const type of ImportTypes) {
-        for (const trivia of [' ', '/**/', ' /* gap */ ', '\r\n', '// gap\n', '# gap\n']) {
-          for (const separator of [String.raw`\{`, String.raw`\ {`, String.raw`\/* gap */{`]) {
-            const statement = `use ${type}array\\Prefix${trivia}${separator}Target};`;
-            const tree = parser.parse(`<?php ${statement} $following = 1;`)!;
-            try {
-              expect(tree.rootNode.hasError, statement).toBe(false);
-              expect(tree.rootNode.descendantsOfType('namespace_use_declaration').map((node) => node.text)).toEqual([
-                statement,
-              ]);
-              expect(tree.rootNode.lastNamedChild?.text).toBe('$following = 1;');
-            } finally {
-              tree.delete();
+      for (const start of ['array', String.raw`\array`]) {
+        for (const type of ImportTypes) {
+          for (const trivia of [' ', '/**/', ' /* gap */ ', '\r\n', '// gap\n', '# gap\n']) {
+            for (const separator of [String.raw`\{`, String.raw`\ {`, String.raw`\/* gap */{`]) {
+              const statement = `use ${type}${start}\\Prefix${trivia}${separator}Target};`;
+              const tree = parser.parse(`<?php ${statement} $following = 1;`)!;
+              try {
+                expect(tree.rootNode.hasError, statement).toBe(false);
+                expect(tree.rootNode.descendantsOfType('namespace_use_declaration').map((node) => node.text)).toEqual([
+                  statement,
+                ]);
+                expect(tree.rootNode.lastNamedChild?.text).toBe('$following = 1;');
+              } finally {
+                tree.delete();
+              }
             }
           }
         }

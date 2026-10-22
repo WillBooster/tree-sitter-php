@@ -42,10 +42,12 @@ for (const [grammar, prefix] of Object.entries(Prefixes)) {
     });
 
     test.each([
-      ['qualified', 'Target'],
-      ['grouped', '{Target}'],
-    ])('parses long %s import paths in linear time', { timeout: 60_000 }, (_name, ending) => {
-      const source = (count: number): string => `${prefix}use array\\${'Segment\\'.repeat(count)}${ending};`;
+      ['qualified', 'array\\', 'Target'],
+      ['grouped', 'array\\', '{Target}'],
+      ['absolute qualified', '\\Foo\\', 'Target'],
+      ['absolute grouped', '\\Foo\\', '{Target}'],
+    ])('parses long %s import paths in linear time', { timeout: 60_000 }, (_name, start, ending) => {
+      const source = (count: number): string => `${prefix}use ${start}${'Segment\\'.repeat(count)}${ending};`;
       expectLinearCpuTime(parser, source(200), source(2000), false);
     });
 

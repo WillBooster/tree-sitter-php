@@ -283,7 +283,7 @@ module.exports = function defineGrammar(dialect) {
 
       _namespace_use_qualified_name: $ => seq(
         field('prefix', choice(
-          seq('\\', optional(seq($.namespace_name, '\\'))),
+          seq('\\', optional(seq(alias($._namespace_use_absolute_namespace_name, $.namespace_name), '\\'))),
           seq(alias($._namespace_use_namespace_name, $.namespace_name), '\\'),
         )),
         $._unreserved_identifier,
@@ -291,6 +291,11 @@ module.exports = function defineGrammar(dialect) {
 
       _namespace_use_namespace_name: $ => seq(
         choice($._identifier, alias($._namespace_use_prefix, $.name)),
+        repeat(seq(alias($._namespace_use_separator, '\\'), $._unreserved_identifier)),
+      ),
+
+      _namespace_use_absolute_namespace_name: $ => seq(
+        $._unreserved_identifier,
         repeat(seq(alias($._namespace_use_separator, '\\'), $._unreserved_identifier)),
       ),
 
@@ -344,7 +349,7 @@ module.exports = function defineGrammar(dialect) {
       _namespace_use_group: $ => seq(
         field('type', optional($._namespace_use_type)),
         choice(
-          seq('\\', $.namespace_name),
+          seq('\\', alias($._namespace_use_absolute_namespace_name, $.namespace_name)),
           alias($._namespace_use_namespace_name, $.namespace_name),
         ),
         '\\',
