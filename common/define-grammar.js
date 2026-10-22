@@ -50,7 +50,7 @@ const PREC = {
  * @see https://www.php.net/manual/en/reserved.keywords.php
  */
 const BASE_RESERVED_KEYWORDS = [
-  'abstract', 'and', 'as', 'break', 'callable', 'case',
+  'abstract', 'and', 'array', 'as', 'break', 'callable', 'case',
   'catch', 'class', 'clone', 'const', 'continue', 'declare',
   'default', 'do', 'echo', 'else', 'elseif', 'enddeclare',
   'endfor', 'endforeach', 'endif', 'endswitch', 'endwhile', 'extends',
@@ -315,7 +315,7 @@ module.exports = function defineGrammar(dialect) {
         reserved('nothing', $.name),
         alias($.primitive_type, $.name),
         alias($._static_type, $.name),
-        alias(choice(...BASE_RESERVED_KEYWORDS.filter(word => !['callable', 'namespace', 'static', 'yield from'].includes(word)).map(word => keyword(word, false))), $.name),
+        alias(choice(...BASE_RESERVED_KEYWORDS.filter(word => !['array', 'callable', 'namespace', 'static', 'yield from'].includes(word)).map(word => keyword(word, false))), $.name),
       ),
 
       namespace_name: $ => seq(
@@ -704,7 +704,7 @@ module.exports = function defineGrammar(dialect) {
 
       primitive_type: _ => choice(
         ...IDENTIFIER_TYPE_KEYWORDS,
-        'array',
+        keyword('array', false),
         keyword('callable', false), // not legal in property types
         keyword('false', false),
         keyword('iterable', false),
@@ -731,7 +731,7 @@ module.exports = function defineGrammar(dialect) {
           reserved('nothing', $.name),
           alias($.primitive_type, $.name),
           alias($._static_type, $.name),
-          alias(choice(...BASE_RESERVED_KEYWORDS.filter(word => !['callable', 'static', 'yield from'].includes(word)).map(word => keyword(word, false))), $.name),
+          alias(choice(...BASE_RESERVED_KEYWORDS.filter(word => !['array', 'callable', 'static', 'yield from'].includes(word)).map(word => keyword(word, false))), $.name),
         ),
         '=',
         $.expression,

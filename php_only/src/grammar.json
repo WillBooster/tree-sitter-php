@@ -3998,8 +3998,9 @@
           "flags": "i"
         },
         {
-          "type": "STRING",
-          "value": "array"
+          "type": "PATTERN",
+          "value": "array",
+          "flags": "i"
         },
         {
           "type": "PATTERN",
@@ -11055,6 +11056,11 @@
       },
       {
         "type": "PATTERN",
+        "value": "array",
+        "flags": "i"
+      },
+      {
+        "type": "PATTERN",
         "value": "as",
         "flags": "i"
       },
@@ -11368,6 +11374,11 @@
       {
         "type": "PATTERN",
         "value": "and",
+        "flags": "i"
+      },
+      {
+        "type": "PATTERN",
+        "value": "array",
         "flags": "i"
       },
       {
