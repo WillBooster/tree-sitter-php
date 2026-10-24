@@ -1,10 +1,10 @@
-import { describe, expect, test } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { generationInputMtime } from '../helpers/generationInputs.js';
-
 import { Language, Parser } from '@willbooster/web-tree-sitter';
+import { describe, expect, test } from 'vitest';
+
+import { generationInputMtime } from '../helpers/generationInputs.js';
 
 const Root = path.join(import.meta.dirname, '../..');
 const Prefixes = { php: '<?php\n', php_only: '' };

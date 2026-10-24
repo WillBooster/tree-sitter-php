@@ -1,7 +1,7 @@
-import { expect, test } from 'vitest';
 import path from 'node:path';
 
 import { Language, Parser } from '@willbooster/web-tree-sitter';
+import { expect, test } from 'vitest';
 
 const Names = ['\u00A0name', 'na\u200Bme', '\u2060name', 'na\uFEFFme', '𐐀name', 'emoji😀'];
 await Parser.init();

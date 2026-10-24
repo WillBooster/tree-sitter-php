@@ -1,7 +1,7 @@
 import path from 'node:path';
-import { expect, test } from 'vitest';
 
 import { Edit, Language, Parser } from '@willbooster/web-tree-sitter';
+import { expect, test } from 'vitest';
 
 const Statements = [
   ['return', 'return_statement', 'return'],
