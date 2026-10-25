@@ -16,7 +16,7 @@
 //!
 //! [`LANGUAGE_PHP_ONLY`] parses PHP code that is not embedded in text, where the `<?php` tag is optional.
 //!
-//! [`Parser`]: https://docs.rs/willbooster-tree-sitter/13.0.0/tree_sitter/struct.Parser.html
+//! [`Parser`]: https://docs.rs/willbooster-tree-sitter/15.0.0/tree_sitter/struct.Parser.html
 //! [tree-sitter]: https://tree-sitter.github.io/
 
 use tree_sitter_language::LanguageFn;
