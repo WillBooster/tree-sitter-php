@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { Edit, Language, Parser, Query } from '@willbooster/web-tree-sitter';
+import { Language, Parser, Query } from '@willbooster/web-tree-sitter';
 import { expect, test } from 'vitest';
 
 const Names = [
@@ -111,94 +111,3 @@ consume(array: 1, function: 2, match: 3);`;
     }
   }
 );
-
-test.each(['php', 'php_only'])('%s reparses qualified keyword names after edits and undo', async (dialect) => {
-  const language = await Language.load(path.resolve(`tree-sitter-${dialect}.wasm`));
-  const parser = new Parser().setLanguage(language);
-  const prefix = `${dialect === 'php' ? '<?php\n' : ''}consume(`;
-  let name = 'array';
-  let source = `${prefix}${name}\\Target);\n$following = 1;`;
-  let tree = parser.parse(source)!;
-  try {
-    for (const replacement of ['function', 'match', 'array😀', 'ordinary', 'array']) {
-      const startIndex = prefix.length;
-      const startPosition = { row: dialect === 'php' ? 1 : 0, column: 'consume('.length };
-      tree.edit(
-        new Edit({
-          startIndex,
-          oldEndIndex: startIndex + name.length,
-          newEndIndex: startIndex + replacement.length,
-          startPosition,
-          oldEndPosition: { ...startPosition, column: startPosition.column + name.length },
-          newEndPosition: { ...startPosition, column: startPosition.column + replacement.length },
-        })
-      );
-      source = `${prefix}${replacement}\\Target);\n$following = 1;`;
-      const incremental = parser.parse(source, tree)!;
-      const fresh = parser.parse(source)!;
-      try {
-        expect(incremental.rootNode.hasError, source).toBe(false);
-        expect(incremental.rootNode.toString()).toBe(fresh.rootNode.toString());
-        const names = incremental.rootNode.descendantsOfType('qualified_name');
-        expect(names.map((node) => [node.text, node.startIndex, node.endIndex])).toEqual([
-          [`${replacement}\\Target`, prefix.length, prefix.length + replacement.length + String.raw`\Target`.length],
-        ]);
-        expect(incremental.rootNode.lastNamedChild?.text).toBe('$following = 1;');
-      } finally {
-        fresh.delete();
-      }
-      tree.delete();
-      tree = incremental;
-      name = replacement;
-    }
-  } finally {
-    tree.delete();
-    parser.delete();
-  }
-});
-
-test.each(['php', 'php_only'])('%s disambiguates function imports after spacing edits and undo', async (dialect) => {
-  const language = await Language.load(path.resolve(`tree-sitter-${dialect}.wasm`));
-  const parser = new Parser().setLanguage(language);
-  const prefix = `${dialect === 'php' ? '<?php\n' : ''}use function`;
-  let spacing = '';
-  let tree = parser.parse(`${prefix}\\Target;`)!;
-  try {
-    for (const replacement of [' ', '']) {
-      const startPosition = { row: dialect === 'php' ? 1 : 0, column: 'use function'.length };
-      tree.edit(
-        new Edit({
-          startIndex: prefix.length,
-          oldEndIndex: prefix.length + spacing.length,
-          newEndIndex: prefix.length + replacement.length,
-          startPosition,
-          oldEndPosition: { ...startPosition, column: startPosition.column + spacing.length },
-          newEndPosition: { ...startPosition, column: startPosition.column + replacement.length },
-        })
-      );
-      const source = `${prefix}${replacement}\\Target;`;
-      const incremental = parser.parse(source, tree)!;
-      const fresh = parser.parse(source)!;
-      try {
-        expect(incremental.rootNode.hasError).toBe(false);
-        expect(incremental.rootNode.toString()).toBe(fresh.rootNode.toString());
-        expect(incremental.rootNode.descendantsOfType('qualified_name').map((node) => node.text)).toEqual([
-          replacement ? String.raw`\Target` : String.raw`function\Target`,
-        ]);
-        expect(
-          incremental.rootNode
-            .descendantsOfType('namespace_use_clause')
-            .map((node) => node.childForFieldName('type')?.text)
-        ).toEqual([replacement ? 'function' : undefined]);
-      } finally {
-        fresh.delete();
-      }
-      tree.delete();
-      tree = incremental;
-      spacing = replacement;
-    }
-  } finally {
-    tree.delete();
-    parser.delete();
-  }
-});

@@ -10,12 +10,12 @@ const KillMargin = 10_000;
 
 // Tests that a command run from the repository root exits zero within the timeout, and passes its output to
 // `check`. The command runs in its own process group, which the timeout kills as a whole: a parse that never ends
-// keeps busy the native binary that a script such as script/fuzz-corpus starts, not the direct child.
+// keeps busy the native binary that a script such as script/parse-examples starts, not the direct child.
 export function testCommand(
   name: string,
   command: [string, ...string[]],
   timeout: number,
-  options: { env?: Record<string, string>; check?: (output: string) => void } = {}
+  options: { check?: (output: string) => void } = {}
 ): void {
   test(
     name,
@@ -26,7 +26,7 @@ export function testCommand(
         // The CLI caches compiled parsers by language name in a directory shared by every checkout and reuses one that is
         // newer than the sources, so another checkout's parser could be tested instead of this one, also through a
         // TREE_SITTER_LIBDIR set in the environment.
-        env: { ...process.env, TREE_SITTER_LIBDIR: `${repositoryRoot}/.tmp/tree-sitter-lib`, ...options.env },
+        env: { ...process.env, TREE_SITTER_LIBDIR: `${repositoryRoot}/.tmp/tree-sitter-lib` },
         stdio: ['ignore', 'pipe', 'pipe'],
       });
       let output = '';
