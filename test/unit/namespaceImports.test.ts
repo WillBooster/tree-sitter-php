@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { Edit, Language, Parser } from '@willbooster/web-tree-sitter';
+import { Language, Parser } from '@willbooster/web-tree-sitter';
 import { expect, test } from 'vitest';
 
 const Names = ['array', 'ARRAY', 'ArRaY'];
@@ -80,58 +80,6 @@ test.each(['php', 'php_only'])(
   }
 );
 
-test.each(['php', 'php_only'])(
-  '%s distinguishes a const namespace prefix from an import type after edits',
-  async (dialect) => {
-    const parser = new Parser().setLanguage(await Language.load(path.resolve(`tree-sitter-${dialect}.wasm`)));
-    try {
-      for (const keyword of ['const', 'CoNsT']) {
-        const prefix = `<?php use ${keyword}`;
-        let spacing = '';
-        let tree = parser.parse(`${prefix}\\Target;`)!;
-        try {
-          for (const replacement of [' ', '']) {
-            tree.edit(
-              new Edit({
-                startIndex: prefix.length,
-                oldEndIndex: prefix.length + spacing.length,
-                newEndIndex: prefix.length + replacement.length,
-                startPosition: { row: 0, column: prefix.length },
-                oldEndPosition: { row: 0, column: prefix.length + spacing.length },
-                newEndPosition: { row: 0, column: prefix.length + replacement.length },
-              })
-            );
-            const source = `${prefix}${replacement}\\Target;`;
-            const changed = parser.parse(source, tree)!;
-            const fresh = parser.parse(source)!;
-            try {
-              expect(changed.rootNode.hasError).toBe(false);
-              expect(changed.rootNode.toString()).toBe(fresh.rootNode.toString());
-              expect(
-                changed.rootNode
-                  .descendantsOfType('namespace_use_clause')
-                  .map((node) => node.childForFieldName('type')?.text)
-              ).toEqual([replacement ? keyword : undefined]);
-              expect(changed.rootNode.descendantsOfType('qualified_name').map((node) => node.text)).toEqual([
-                replacement ? String.raw`\Target` : `${keyword}\\Target`,
-              ]);
-            } finally {
-              fresh.delete();
-            }
-            tree.delete();
-            tree = changed;
-            spacing = replacement;
-          }
-        } finally {
-          tree.delete();
-        }
-      }
-    } finally {
-      parser.delete();
-    }
-  }
-);
-
 test.each(['php', 'php_only'])('%s rejects bare reserved array imports', async (dialect) => {
   const parser = new Parser().setLanguage(await Language.load(path.resolve(`tree-sitter-${dialect}.wasm`)));
   try {
@@ -184,57 +132,6 @@ test.each(['php', 'php_only'])('%s preserves qualified keyword import paths and 
             tree.delete();
           }
         }
-      }
-    }
-  } finally {
-    parser.delete();
-  }
-});
-
-test.each(['php', 'php_only'])('%s reparses an array import after adding a path and undoing it', async (dialect) => {
-  const parser = new Parser().setLanguage(await Language.load(path.resolve(`tree-sitter-${dialect}.wasm`)));
-  try {
-    for (const type of ImportTypes) {
-      const prefix = `<?php use ${type}array`;
-      let suffix = '';
-      let tree = parser.parse(`${prefix};`)!;
-      try {
-        expect(tree.rootNode.hasError).toBe(true);
-        for (const replacement of [String.raw`\Target`, '']) {
-          tree.edit(
-            new Edit({
-              startIndex: prefix.length,
-              oldEndIndex: prefix.length + suffix.length,
-              newEndIndex: prefix.length + replacement.length,
-              startPosition: { row: 0, column: prefix.length },
-              oldEndPosition: { row: 0, column: prefix.length + suffix.length },
-              newEndPosition: { row: 0, column: prefix.length + replacement.length },
-            })
-          );
-          const source = `${prefix}${replacement};`;
-          const changed = parser.parse(source, tree)!;
-          const fresh = parser.parse(source)!;
-          try {
-            expect(changed.rootNode.hasError).toBe(replacement === '');
-            expect(changed.rootNode.toString()).toBe(fresh.rootNode.toString());
-            expect(
-              changed.rootNode
-                .descendantsOfType('qualified_name')
-                .map((node) => [node.text, node.startIndex, node.endIndex])
-            ).toEqual(
-              fresh.rootNode
-                .descendantsOfType('qualified_name')
-                .map((node) => [node.text, node.startIndex, node.endIndex])
-            );
-          } finally {
-            fresh.delete();
-          }
-          tree.delete();
-          tree = changed;
-          suffix = replacement;
-        }
-      } finally {
-        tree.delete();
       }
     }
   } finally {

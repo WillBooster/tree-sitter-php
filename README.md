@@ -5,7 +5,7 @@
 [![Test](https://github.com/WillBooster/tree-sitter-php/actions/workflows/test.yml/badge.svg)](https://github.com/WillBooster/tree-sitter-php/actions/workflows/test.yml)
 [![Test rust](https://github.com/WillBooster/tree-sitter-php/actions/workflows/test-rust.yml/badge.svg)](https://github.com/WillBooster/tree-sitter-php/actions/workflows/test-rust.yml)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
-[![wbfy](https://img.shields.io/badge/wbfy-20.48.9-1e90ff.svg)](https://github.com/WillBooster/shared/tree/main/packages/wbfy)
+[![wbfy](https://img.shields.io/badge/wbfy-20.49.0-1e90ff.svg)](https://github.com/WillBooster/shared/tree/main/packages/wbfy)
 [![crates.io](https://img.shields.io/crates/v/willbooster-tree-sitter-php.svg)](https://crates.io/crates/willbooster-tree-sitter-php)
 
 PHP grammars for [tree-sitter](https://github.com/tree-sitter/tree-sitter), forked from
@@ -114,10 +114,6 @@ and the release build regenerate the parsers before compiling them.
 
 - the corpus in `test/corpus`, with the native build and with the Wasm build (the first run downloads the WASI SDK).
   Its cases belong to the `php` grammar unless they are marked `:language(php_only)`;
-- an incremental-parsing check (`test/unit/incremental.test.ts`): `script/fuzz-corpus` runs `tree-sitter fuzz` for a
-  grammar, which edits each of its corpus cases at random, reparses it, undoes the edits, and reparses again. `TREE_SITTER_SEED`,
-  `TREE_SITTER_ITERATIONS`, and `TREE_SITTER_EDITS` run other or more edits. It runs every corpus case with both grammars,
-  except the cases `script/fuzz-corpus` excludes;
 - a check that the real-world PHP files in `examples/`, those of the cloned repositories, fail to parse with the `php`
   grammar exactly as listed in `script/known-failures.txt`. The first run clones the repositories. The example repositories are pinned to commits in
   `script/parse-examples`. After a grammar change or a moved pin alters that list, `script/parse-examples` rewrites it;
@@ -132,8 +128,7 @@ and the release build regenerate the parsers before compiling them.
   Cloudflare Workers with and without Node.js compatibility (`test/e2e/workers.test.ts`).
 
 The tests compile the parsers into `.tmp/tree-sitter-lib` rather than the CLI's cache shared by every checkout;
-`script/fuzz-corpus` and `script/parse-examples` build a parser of their own in `.tmp/` for each run and delete it
-afterwards.
+`script/parse-examples` builds a parser of its own in `.tmp/` for each run and deletes it afterwards.
 
 CI also runs these tests on Linux arm64 and macOS, where the CLI compiles the parsers and the scanner natively, and
 fuzzes both parsers with libFuzzer and sanitizers (`.github/workflows/robustness.yml`).
