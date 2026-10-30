@@ -7,20 +7,14 @@
       "scope": "source.php",
       "path": "php",
       "external-files": ["common/scanner.h"],
-      "file-types": ["php"],
-      "highlights": "queries/highlights.scm",
-      "injections": ["queries/injections.scm", "queries/injections-text.scm"],
-      "tags": "queries/tags.scm"
+      "file-types": ["php"]
     },
     {
       "name": "php_only",
       "camelcase": "PHP_Only",
       "scope": "source.php",
       "path": "php_only",
-      "external-files": ["common/scanner.h"],
-      "highlights": "queries/highlights.scm",
-      "injections": "queries/injections.scm",
-      "tags": "queries/tags.scm"
+      "external-files": ["common/scanner.h"]
     }
   ],
   "metadata": {
