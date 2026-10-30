@@ -599,6 +599,41 @@ function f(static\X $x): static\X {}
     (compound_statement)))
 
 =========================================
+Absolute keyword prefixes in constant types
+=========================================
+
+<?php
+class C {
+    const \if ABSOLUTE = OTHER;
+    const \class\if\static NESTED = OTHER;
+}
+
+---
+
+(program
+  (php_tag)
+  (class_declaration
+    (name)
+    (declaration_list
+      (const_declaration
+        (named_type
+          (qualified_name
+            (name)))
+        (const_element
+          (name)
+          (name)))
+      (const_declaration
+        (named_type
+          (qualified_name
+            (namespace_name
+              (name)
+              (name))
+            (name)))
+        (const_element
+          (name)
+          (name))))))
+
+=========================================
 Qualified keyword expression names
 =========================================
 
