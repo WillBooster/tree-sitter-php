@@ -81,7 +81,7 @@ fuzzed with:
 ```toml
 [dependencies]
 tree-sitter = { package = "willbooster-tree-sitter", version = "15.0.0" }
-tree-sitter-php = { package = "willbooster-tree-sitter-php", version = "5" }
+tree-sitter-php = { package = "willbooster-tree-sitter-php", version = "6" }
 ```
 
 ```rust
