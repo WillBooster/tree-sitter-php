@@ -5,14 +5,14 @@
 [![Test](https://github.com/WillBooster/tree-sitter-php/actions/workflows/test.yml/badge.svg)](https://github.com/WillBooster/tree-sitter-php/actions/workflows/test.yml)
 [![Test rust](https://github.com/WillBooster/tree-sitter-php/actions/workflows/test-rust.yml/badge.svg)](https://github.com/WillBooster/tree-sitter-php/actions/workflows/test-rust.yml)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
-[![wbfy](https://img.shields.io/badge/wbfy-20.49.0-1e90ff.svg)](https://github.com/WillBooster/shared/tree/main/packages/wbfy)
+[![wbfy](https://img.shields.io/badge/wbfy-20.51.1-1e90ff.svg)](https://github.com/WillBooster/shared/tree/main/packages/wbfy)
 [![crates.io](https://img.shields.io/crates/v/willbooster-tree-sitter-php.svg)](https://crates.io/crates/willbooster-tree-sitter-php)
 
 PHP grammars for [tree-sitter](https://github.com/tree-sitter/tree-sitter), forked from
 [tree-sitter/tree-sitter-php](https://github.com/tree-sitter/tree-sitter-php). We are grateful
 to its authors and contributors. This is not an official release of that project.
 
-This fork builds on upstream's version 0.24.2 grammars and queries with support for absolute grouped namespace imports
+This fork builds on upstream's version 0.24.2 grammars with support for absolute grouped namespace imports
 and asymmetric visibility in constructor property promotion.
 Its external scanner adapts to the generated array API and fixes incremental heredoc parsing. It generates the parsers with the
 [WillBooster/tree-sitter](https://github.com/WillBooster/tree-sitter) generator. The parsers carry that fork's own ABI
@@ -21,6 +21,13 @@ number `0x5742000b`, so they load only with its 15.x runtime (`willbooster-tree-
 
 It holds two grammars, as upstream does: `php` parses PHP embedded in text, which starts in text mode and enters PHP at
 an opening tag such as `<?php`, and `php_only` parses PHP code on its own, where the opening tag is optional.
+
+## Support Scope
+
+This fork maintains only full parsing: valid input yields a correct tree, and invalid input yields `ERROR` or `MISSING`
+nodes without crashing, hanging, or taking more than linear time. Incremental parsing works as in upstream tree-sitter
+but is not tested here, and no queries (highlights, locals, injections, tags) are shipped. Node types, field names, and
+the trees that error recovery produces may change; such changes are released as new major versions.
 
 ## Usage
 
@@ -65,8 +72,7 @@ parser.setLanguage(await Language.load(php));
 ```
 
 The package also ships the grammar definitions (`common/define-grammar.js`, `php/grammar.js`, and
-`php_only/grammar.js`), the queries in `queries/`, and the node types in `php/src/node-types.json` and
-`php_only/src/node-types.json`.
+`php_only/grammar.js`) and the node types in `php/src/node-types.json` and `php_only/src/node-types.json`.
 
 In Rust, depend on the [crate](https://crates.io/crates/willbooster-tree-sitter-php) and on
 [willbooster-tree-sitter](https://crates.io/crates/willbooster-tree-sitter), the runtime this package is tested and

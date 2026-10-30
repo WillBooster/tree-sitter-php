@@ -21,7 +21,6 @@ include = [
   "php_only/grammar.js",
   "php_only/src/*",
   "!php_only/src/.gitattributes",
-  "/queries/*.scm",
   "/tree-sitter.json",
   "/LICENSE",
 ]

@@ -42,15 +42,6 @@ pub const PHP_NODE_TYPES: &str = include_str!("../../php/src/node-types.json");
 /// [`node-types.json`]: https://tree-sitter.github.io/tree-sitter/using-parsers/6-static-node-types
 pub const PHP_ONLY_NODE_TYPES: &str = include_str!("../../php_only/src/node-types.json");
 
-/// The syntax highlighting query for PHP.
-pub const HIGHLIGHTS_QUERY: &str = include_str!("../../queries/highlights.scm");
-
-/// The injection query for PHP.
-pub const INJECTIONS_QUERY: &str = include_str!("../../queries/injections.scm");
-
-/// The symbol tagging query for PHP.
-pub const TAGS_QUERY: &str = include_str!("../../queries/tags.scm");
-
 #[cfg(test)]
 mod tests {
     #[test]
