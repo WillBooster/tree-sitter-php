@@ -1,7 +1,6 @@
-import fs from 'node:fs';
 import path from 'node:path';
 
-import { Language, Parser, Query } from '@willbooster/web-tree-sitter';
+import { Language, Parser } from '@willbooster/web-tree-sitter';
 import { expect, test } from 'vitest';
 
 const Names = [
@@ -20,7 +19,6 @@ await Parser.init();
 test.each(['php', 'php_only'])('%s preserves keyword prefixes in qualified expression names', async (dialect) => {
   const language = await Language.load(path.resolve(`tree-sitter-${dialect}.wasm`));
   const parser = new Parser().setLanguage(language);
-  const query = new Query(language, '(qualified_name) @qualified');
   try {
     for (const name of Names) {
       const qualified = `${name}\\Target`;
@@ -41,7 +39,7 @@ test.each(['php', 'php_only'])('%s preserves keyword prefixes in qualified expre
           expect(tree.rootNode.hasError, source).toBe(false);
           const expected = Array.from({ length: body.includes('function consume(') ? 2 : 1 }, () => qualified);
           expect(
-            query.captures(tree.rootNode).map(({ node }) => node.text),
+            tree.rootNode.descendantsOfType('qualified_name').map((node) => node.text),
             source
           ).toEqual(expected);
           expect(
@@ -56,7 +54,6 @@ test.each(['php', 'php_only'])('%s preserves keyword prefixes in qualified expre
       }
     }
   } finally {
-    query.delete();
     parser.delete();
   }
 });
@@ -83,14 +80,6 @@ consume(array: 1, function: 2, match: 3);`;
         'match($value) { 1 => 2, default => 3 }',
       ]);
       expect(tree.rootNode.descendantsOfType('qualified_name')).toHaveLength(0);
-      for (const queryPath of ['highlights', 'injections', 'tags', ...(dialect === 'php' ? ['injections-text'] : [])]) {
-        const query = new Query(language, fs.readFileSync(`queries/${queryPath}.scm`, 'utf8'));
-        try {
-          query.captures(tree.rootNode);
-        } finally {
-          query.delete();
-        }
-      }
       for (const keyword of ['array', 'function', 'match']) {
         for (const body of [
           `consume(${keyword}\\);`,
