@@ -11,7 +11,7 @@ test.each(['php', 'php_only'])('%s preserves long string delimiters and followin
     for (const label of ['X'.repeat(254), 'Y'.repeat(255), 'Z'.repeat(4096), '😀'.repeat(1024)]) {
       for (const quote of ['', '"', "'"]) {
         const nowdoc = quote === "'";
-        const body = `${label}suffix\n${[...label].slice(0, -1).join('')}\ntext $value`;
+        const body = `${label}suffix\n${label.replace(/.$/u, '')}\ntext $value`;
         const source = `<?php\n$result = <<<${quote}${label}${quote}\n${body}\n${label};\n$following = 1;`;
         const tree = parser.parse(source)!;
         try {
