@@ -36,7 +36,7 @@ test.each(['php', 'php_only'])('%s preserves long string delimiters and followin
   }
 });
 
-test.each(['php', 'php_only'])('%s restores nested heredoc delimiters beyond the snapshot limit', async (dialect) => {
+test.each(['php', 'php_only'])('%s closes 256 nested heredocs with their own delimiters', async (dialect) => {
   const parser = new Parser().setLanguage(await Language.load(path.resolve(`tree-sitter-${dialect}.wasm`)));
   const labels = Array.from({ length: 256 }, (_, index) => `TAG${index}XXXXXXXX`);
   const source = `<?php

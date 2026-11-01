@@ -96,7 +96,7 @@ SQL;
         (heredoc_end)))))
 
 ==========================
-Nested heredocs preserve saved-state capacity
+Nested heredocs restore enclosing delimiters
 ==========================
 
 <?php
