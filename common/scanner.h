@@ -46,29 +46,20 @@ static inline bool string_eq(String *self, String *other) {
     if (self->size != other->size) {
         return false;
     }
-    if (self->size == 0) {
-        return self->size == other->size;
-    }
-    return memcmp(self->contents, other->contents, self->size * sizeof(self->contents[0])) == 0;
+    return self->size == 0 || memcmp(self->contents, other->contents, self->size * sizeof(self->contents[0])) == 0;
 }
 
 typedef struct {
-    bool end_word_indentation_allowed;
-    bool can_close;
+    uint32_t parent;
+    bool parent_can_close;
     String word;
 } Heredoc;
 
-#define heredoc_new()                                                                                                  \
-    {                                                                                                                  \
-        .end_word_indentation_allowed = false,                                                                         \
-        .word = array_new(),                                                                                           \
-    };
-
 typedef struct {
     Array(Heredoc) heredocs;
+    uint32_t current;
+    bool can_close;
 } Scanner;
-
-typedef enum { Error, End } ScanContentResult;
 
 typedef enum { NoPrefix, PrefixRejected, PrefixAccepted } PrefixScanResult;
 
@@ -76,60 +67,31 @@ static inline void advance(TSLexer *lexer) { lexer->advance(lexer, false); }
 
 static inline void skip(TSLexer *lexer) { lexer->advance(lexer, true); }
 
+// The runtime destroys the scanner at the end of each full parse. Keep immutable stack records alive until then so
+// deserialization can restore any parser branch without copying labels into the fixed-size serialization buffer.
 static unsigned serialize(Scanner *scanner, char *buffer) {
-    unsigned size = 0;
-
-    buffer[size++] = (char)scanner->heredocs.size;
-    for (unsigned j = 0; j < scanner->heredocs.size; j++) {
-        Heredoc *heredoc = &scanner->heredocs.contents[j];
-        unsigned word_size = heredoc->word.size * sizeof(heredoc->word.contents[0]);
-        if (size + 5 + word_size >= TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
-            return 0;
-        }
-        buffer[size++] = (char)(heredoc->end_word_indentation_allowed | (heredoc->can_close << 1));
-        memcpy(&buffer[size], &heredoc->word.size, sizeof(uint32_t));
-        size += sizeof(uint32_t);
-        if (heredoc->word.size > 0) {
-            memcpy(&buffer[size], heredoc->word.contents, word_size);
-            size += word_size;
-        }
+    if (scanner->current == 0) {
+        return 0;
     }
-
-    return size;
+    memcpy(buffer, &scanner->current, sizeof(scanner->current));
+    buffer[sizeof(scanner->current)] = scanner->can_close;
+    return sizeof(scanner->current) + 1;
 }
 
 static void deserialize(Scanner *scanner, const char *buffer, unsigned length) {
-    unsigned size = 0;
-
-    for (uint32_t i = 0; i < scanner->heredocs.size; i++) {
-        array_delete(&scanner->heredocs.contents[i].word);
-    }
-    array_clear(&scanner->heredocs);
-
+    scanner->current = 0;
+    scanner->can_close = false;
     if (length == 0) {
         return;
     }
+    assert(length == sizeof(scanner->current) + 1);
+    memcpy(&scanner->current, buffer, sizeof(scanner->current));
+    assert(scanner->current <= scanner->heredocs.size);
+    scanner->can_close = buffer[sizeof(scanner->current)] != 0;
+}
 
-    uint8_t open_heredoc_count = buffer[size++];
-    for (unsigned i = 0; i < open_heredoc_count; i++) {
-        Heredoc new_heredoc = heredoc_new();
-        array_push(&scanner->heredocs, new_heredoc);
-        Heredoc *heredoc = array_back(&scanner->heredocs);
-
-        uint8_t flags = (uint8_t)buffer[size++];
-        heredoc->end_word_indentation_allowed = (flags & 1) != 0;
-        heredoc->can_close = (flags & 2) != 0;
-        memcpy(&heredoc->word.size, &buffer[size], sizeof(uint32_t));
-        size += sizeof(uint32_t);
-        unsigned word_size = heredoc->word.size * sizeof(heredoc->word.contents[0]);
-        if (word_size > 0) {
-            array_reserve(&heredoc->word, heredoc->word.size);
-            memcpy(heredoc->word.contents, &buffer[size], word_size);
-            size += word_size;
-        }
-    }
-
-    assert(size == length);
+static Heredoc *current_heredoc(Scanner *scanner) {
+    return array_get(&scanner->heredocs, scanner->current - 1);
 }
 
 static inline bool is_php_whitespace(int32_t character) {
@@ -205,7 +167,7 @@ static String scan_heredoc_word(TSLexer *lexer) {
 
 static inline bool scan_nowdoc_string(Scanner *scanner, TSLexer *lexer) {
     bool has_consumed_content = false;
-    if (scanner->heredocs.size == 0) {
+    if (scanner->current == 0) {
         return false;
     }
 
@@ -215,7 +177,7 @@ static inline bool scan_nowdoc_string(Scanner *scanner, TSLexer *lexer) {
     }
 
     bool end_tag_matched = false;
-    String heredoc_tag = array_back(&scanner->heredocs)->word;
+    String heredoc_tag = current_heredoc(scanner)->word;
 
     for (uint32_t i = 0; i < heredoc_tag.size; i++) {
         if (lexer->lookahead != heredoc_tag.contents[i]) {
@@ -253,13 +215,13 @@ static bool scan_encapsed_part_string(Scanner *scanner, TSLexer *lexer, bool is_
                                       bool is_execution_string) {
     bool has_consumed_content = false;
 
-    if (is_heredoc && scanner->heredocs.size > 0 && array_back(&scanner->heredocs)->can_close) {
+    if (is_heredoc && scanner->current > 0 && scanner->can_close) {
         while (iswspace(lexer->lookahead) && lexer->lookahead != '\r' && lexer->lookahead != '\n') {
             advance(lexer);
             has_consumed_content = true;
         }
 
-        String heredoc_tag = array_back(&scanner->heredocs)->word;
+        String heredoc_tag = current_heredoc(scanner)->word;
 
         bool end_tag_matched = false;
 
@@ -397,6 +359,8 @@ static bool scan_namespace_use_line_comment(TSLexer *lexer);
 
 static bool scan_namespace_use_block_comment(TSLexer *lexer);
 
+// code-gauge-allow functionNcss 60 -- Splitting the unchanged token dispatch would move complexity into mechanical helpers.
+// code-gauge-allow functionCognitiveComplexity 29 -- Token dispatch keeps the scanner's existing string and import paths together.
 static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     if (valid_symbols[SENTINEL_ERROR]) {
         return false;
@@ -406,11 +370,11 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
 
     if (valid_symbols[HEREDOC_LINE_START]) {
         lexer->result_symbol = HEREDOC_LINE_START;
-        if (scanner->heredocs.size > 0) {
+        if (scanner->current > 0) {
             while (iswspace(lexer->lookahead) && lexer->lookahead != '\r' && lexer->lookahead != '\n') {
                 advance(lexer);
             }
-            array_back(&scanner->heredocs)->can_close = is_valid_name_char(lexer);
+            scanner->can_close = is_valid_name_char(lexer);
         }
         return true;
     }
@@ -430,11 +394,11 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
 
     if (valid_symbols[HEREDOC_END]) {
         lexer->result_symbol = HEREDOC_END;
-        if (scanner->heredocs.size == 0) {
+        if (scanner->current == 0) {
             return false;
         }
 
-        Heredoc heredoc = *array_back(&scanner->heredocs);
+        Heredoc heredoc = *current_heredoc(scanner);
 
         while (iswspace(lexer->lookahead)) {
             skip(lexer);
@@ -448,8 +412,8 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
         array_delete(&word);
 
         lexer->mark_end(lexer);
-        Heredoc doc = array_pop(&scanner->heredocs);
-        array_delete(&doc.word);
+        scanner->current = heredoc.parent;
+        scanner->can_close = heredoc.parent_can_close;
         return true;
     }
 
@@ -468,7 +432,10 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
 
     if (valid_symbols[HEREDOC_START]) {
         lexer->result_symbol = HEREDOC_START;
-        Heredoc heredoc = heredoc_new();
+        Heredoc heredoc = {
+            .parent = scanner->current,
+            .parent_can_close = scanner->can_close,
+        };
 
         while (iswspace(lexer->lookahead)) {
             skip(lexer);
@@ -476,12 +443,13 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
 
         heredoc.word = scan_heredoc_word(lexer);
         if (heredoc.word.size == 0) {
-            array_delete(&heredoc.word);
             return false;
         }
         lexer->mark_end(lexer);
 
         array_push(&scanner->heredocs, heredoc);
+        scanner->current = scanner->heredocs.size;
+        scanner->can_close = false;
         return true;
     }
 
@@ -669,10 +637,10 @@ static inline void external_scanner_deserialize(void *payload, const char *buffe
 static inline bool external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid_symbols) {
     Scanner *scanner = (Scanner *)payload;
     bool result = scan(scanner, lexer, valid_symbols);
-    if (result && scanner->heredocs.size > 0 &&
+    if (result && scanner->current > 0 &&
         (lexer->result_symbol == ENCAPSED_STRING_CHARS_HEREDOC ||
          lexer->result_symbol == ENCAPSED_STRING_CHARS_AFTER_VARIABLE_HEREDOC)) {
-        array_back(&scanner->heredocs)->can_close = false;
+        scanner->can_close = false;
     }
     return result;
 }

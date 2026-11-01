@@ -14,7 +14,7 @@ to its authors and contributors. This is not an official release of that project
 
 This fork builds on upstream's version 0.24.2 grammars with support for absolute grouped namespace imports
 and asymmetric visibility in constructor property promotion.
-Its external scanner adapts to the generated array API and fixes incremental heredoc parsing. It generates the parsers with the
+Its external scanner supports heredoc and nowdoc labels without a fixed length limit. It generates the parsers with the
 [WillBooster/tree-sitter](https://github.com/WillBooster/tree-sitter) generator. The parsers carry that fork's own ABI
 number `0x5742000b`, so they load only with its 15.x runtime (`willbooster-tree-sitter`,
 `@willbooster/web-tree-sitter`), version 15.0.0 or later within 15.x. That runtime loads no parser that upstream's generator wrote.
@@ -25,9 +25,9 @@ an opening tag such as `<?php`, and `php_only` parses PHP code on its own, where
 ## Support Scope
 
 This fork maintains only full parsing: valid input yields a correct tree, and invalid input yields `ERROR` or `MISSING`
-nodes without crashing, hanging, or taking more than linear time. Incremental parsing works as in upstream tree-sitter
-but is not tested here, and no queries (highlights, locals, injections, tags) are shipped. Node types, field names, and
-the trees that error recovery produces may change; such changes are released as new major versions.
+nodes without crashing, hanging, or taking more than linear time. No queries (highlights, locals, injections, tags) are
+shipped. Node types, field names, and the trees that error recovery produces may change; such changes are released as
+new major versions.
 
 ## Usage
 
