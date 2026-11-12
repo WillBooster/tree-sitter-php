@@ -2,7 +2,6 @@
 #include "tree_sitter/parser.h"
 
 #include <string.h>
-#include <wchar.h>
 #include <wctype.h>
 
 enum TokenType {
@@ -121,12 +120,43 @@ static inline bool scan_whitespace(TSLexer *lexer) {
     }
 }
 
+static inline bool is_ascii_alpha(int32_t character) {
+    return (((uint32_t)character | 32u) - 'a') < 26;
+}
+
+static inline bool is_ascii_digit(int32_t character) {
+    return ((uint32_t)character - '0') < 10;
+}
+
+static inline bool is_ascii_xdigit(int32_t character) {
+    return is_ascii_digit(character) || (((uint32_t)character | 32u) - 'a') < 6;
+}
+
+static inline int32_t ascii_tolower(int32_t character) {
+    return ((uint32_t)character - 'A') < 26 ? character + ('a' - 'A') : character;
+}
+
+static inline bool is_unicode_whitespace(int32_t character) {
+    if (character < 0) {
+        return false;
+    }
+    if (character < 0x80) {
+        return character == ' ' || ((uint32_t)character - '\t') < 5;
+    }
+    return iswspace((wint_t)character) != 0;
+}
+
+static inline bool is_horizontal_unicode_whitespace(int32_t character) {
+    return character != '\r' && character != '\n' && is_unicode_whitespace(character);
+}
+
 static inline bool is_valid_name_start(TSLexer *lexer) {
-    return lexer->lookahead == '_' || lexer->lookahead >= 0x80 || iswalpha(lexer->lookahead);
+    return is_ascii_alpha(lexer->lookahead) || lexer->lookahead == '_' || lexer->lookahead >= 0x80;
 }
 
 static inline bool is_valid_name_char(TSLexer *lexer) {
-    return iswalnum(lexer->lookahead) || lexer->lookahead == '_' || lexer->lookahead >= 0x80;
+    return is_ascii_alpha(lexer->lookahead) || is_ascii_digit(lexer->lookahead) || lexer->lookahead == '_' ||
+           lexer->lookahead >= 0x80;
 }
 
 static inline bool is_escapable_sequence(TSLexer *lexer) {
@@ -141,7 +171,7 @@ static inline bool is_escapable_sequence(TSLexer *lexer) {
 
     if (letter == 'x') {
         advance(lexer);
-        return iswxdigit(lexer->lookahead);
+        return is_ascii_xdigit(lexer->lookahead);
     }
 
     if (letter == 'u') {
@@ -151,7 +181,7 @@ static inline bool is_escapable_sequence(TSLexer *lexer) {
                      // interpreted as characters and {$a} as a variable
     }
 
-    return iswdigit(lexer->lookahead) && lexer->lookahead >= '0' && lexer->lookahead <= '7';
+    return ((uint32_t)letter - '0') < 8;
 }
 
 static String scan_heredoc_word(TSLexer *lexer) {
@@ -165,176 +195,151 @@ static String scan_heredoc_word(TSLexer *lexer) {
     return result;
 }
 
+static inline bool scan_heredoc_end_prefix(Scanner *scanner, TSLexer *lexer, bool *has_content) {
+    String heredoc_tag = current_heredoc(scanner)->word;
+    for (uint32_t i = 0; i < heredoc_tag.size; i++) {
+        if (lexer->lookahead != heredoc_tag.contents[i]) {
+            return false;
+        }
+        advance(lexer);
+        *has_content = true;
+    }
+    return heredoc_tag.size > 0 && !is_valid_name_char(lexer);
+}
+
 static inline bool scan_nowdoc_string(Scanner *scanner, TSLexer *lexer) {
-    bool has_consumed_content = false;
     if (scanner->current == 0) {
         return false;
     }
 
-    while (iswspace(lexer->lookahead)) {
+    bool has_content = false;
+    while (is_unicode_whitespace(lexer->lookahead)) {
         advance(lexer);
-        has_consumed_content = true;
+        has_content = true;
     }
-
-    bool end_tag_matched = false;
-    String heredoc_tag = current_heredoc(scanner)->word;
-
-    for (uint32_t i = 0; i < heredoc_tag.size; i++) {
-        if (lexer->lookahead != heredoc_tag.contents[i]) {
-            break;
-        }
-        advance(lexer);
-        has_consumed_content = true;
-
-        end_tag_matched = (i == heredoc_tag.size - 1 && !is_valid_name_char(lexer));
-    }
-
-    if (end_tag_matched) {
+    if (scan_heredoc_end_prefix(scanner, lexer, &has_content)) {
         return false;
     }
 
-    for (bool has_content = has_consumed_content;; has_content = true) {
-        lexer->mark_end(lexer);
+    for (;; has_content = true) {
+        if (lexer->lookahead == '\n' || lexer->lookahead == '\r') {
+            if (has_content) {
+                lexer->mark_end(lexer);
+            }
+            return has_content;
+        }
+        if (lexer->lookahead == 0 && lexer->eof(lexer)) {
+            return false;
+        }
+        advance(lexer);
+    }
+}
 
-        switch (lexer->lookahead) {
-            case '\n':
-            case '\r':
-                return has_content;
-            default:
-                if (lexer->eof(lexer)) {
-                    return false;
-                }
-                advance(lexer);
+static inline bool is_encapsed_end(int32_t character, bool is_heredoc, bool is_execution_string) {
+    if (is_execution_string) {
+        return character == '`';
+    }
+    if (is_heredoc) {
+        return character == '\n' || character == '\r';
+    }
+    return character == '"';
+}
+
+static inline bool is_plain_encapsed_char(int32_t character, bool is_heredoc, bool is_execution_string) {
+    return character != 0 && character != '\\' && character != '$' && character != '{' &&
+           !is_encapsed_end(character, is_heredoc, is_execution_string);
+}
+
+static inline bool starts_encapsed_escape(TSLexer *lexer, bool is_heredoc, bool is_execution_string) {
+    // \{ should not be interpreted as an escape sequence, but both should be consumed as normal characters.
+    if (lexer->lookahead == '{' || (is_heredoc && lexer->lookahead == '\\')) {
+        advance(lexer);
+        return false;
+    }
+    if (is_execution_string && lexer->lookahead == '`') {
+        return true;
+    }
+    return is_escapable_sequence(lexer);
+}
+
+static inline bool scan_heredoc_closing_line(Scanner *scanner, TSLexer *lexer, bool *has_content) {
+    if (scanner->current == 0 || !scanner->can_close) {
+        return false;
+    }
+    while (is_horizontal_unicode_whitespace(lexer->lookahead)) {
+        advance(lexer);
+        *has_content = true;
+    }
+    return scan_heredoc_end_prefix(scanner, lexer, has_content);
+}
+
+static inline bool starts_after_variable_access(TSLexer *lexer, bool *has_content) {
+    if (lexer->lookahead != '[' && lexer->lookahead != '-') {
+        return false;
+    }
+    lexer->mark_end(lexer);
+    if (lexer->lookahead == '[') {
+        return true;
+    }
+    advance(lexer);
+    if (lexer->lookahead == '>') {
+        advance(lexer);
+        if (is_valid_name_char(lexer)) {
+            return true;
         }
     }
-
+    *has_content = true;
     return false;
+}
+
+static inline bool advance_encapsed_step(TSLexer *lexer, bool is_heredoc, bool is_execution_string) {
+    int32_t c = lexer->lookahead;
+    if (c == '\\') {
+        advance(lexer);
+        return !starts_encapsed_escape(lexer, is_heredoc, is_execution_string);
+    }
+    if (c == '$') {
+        advance(lexer);
+        return !is_valid_name_start(lexer) && lexer->lookahead != '{';
+    }
+    if (c == '{') {
+        advance(lexer);
+        return lexer->lookahead != '$';
+    }
+    do {
+        advance(lexer);
+    } while (is_plain_encapsed_char(lexer->lookahead, is_heredoc, is_execution_string));
+    return true;
 }
 
 static bool scan_encapsed_part_string(Scanner *scanner, TSLexer *lexer, bool is_after_variable, bool is_heredoc,
                                       bool is_execution_string) {
-    bool has_consumed_content = false;
-
-    if (is_heredoc && scanner->current > 0 && scanner->can_close) {
-        while (iswspace(lexer->lookahead) && lexer->lookahead != '\r' && lexer->lookahead != '\n') {
-            advance(lexer);
-            has_consumed_content = true;
+    bool has_content = false;
+    if (is_heredoc && scan_heredoc_closing_line(scanner, lexer, &has_content)) {
+        return false;
+    }
+    if (is_after_variable && starts_after_variable_access(lexer, &has_content)) {
+        return has_content;
+    }
+    for (;; has_content = true) {
+        lexer->mark_end(lexer);
+        if (is_encapsed_end(lexer->lookahead, is_heredoc, is_execution_string)) {
+            return has_content;
         }
-
-        String heredoc_tag = current_heredoc(scanner)->word;
-
-        bool end_tag_matched = false;
-
-        for (uint32_t i = 0; i < heredoc_tag.size; i++) {
-            if (lexer->lookahead != heredoc_tag.contents[i]) {
-                break;
-            }
-            has_consumed_content = true;
-            advance(lexer);
-
-            end_tag_matched = (i == heredoc_tag.size - 1 && !is_valid_name_char(lexer));
-        }
-
-        if (end_tag_matched) {
+        if (lexer->lookahead == 0 && lexer->eof(lexer)) {
             return false;
         }
-    }
-
-    for (bool has_content = has_consumed_content;; has_content = true) {
-        lexer->mark_end(lexer);
-
-        switch (lexer->lookahead) {
-            case '"':
-                if (!is_heredoc && !is_execution_string) {
-                    return has_content;
-                }
-                advance(lexer);
-                break;
-            case '`':
-                if (is_execution_string) {
-                    return has_content;
-                }
-                advance(lexer);
-                break;
-            case '\n':
-            case '\r':
-                if (is_heredoc) {
-                    return has_content;
-                }
-                advance(lexer);
-                break;
-            case '\\':
-                advance(lexer);
-
-                // \{ should not be interpreted as an escape sequence, but both
-                // should be consumed as normal characters
-                if (lexer->lookahead == '{') {
-                    advance(lexer);
-                    break;
-                }
-
-                if (is_execution_string && lexer->lookahead == '`') {
-                    return has_content;
-                }
-
-                if (is_heredoc && lexer->lookahead == '\\') {
-                    advance(lexer);
-                    break;
-                }
-
-                if (is_escapable_sequence(lexer)) {
-                    return has_content;
-                }
-                break;
-            case '$':
-                advance(lexer);
-
-                if ((is_valid_name_char(lexer) && !iswdigit(lexer->lookahead)) || lexer->lookahead == '{') {
-                    return has_content;
-                }
-                break;
-            case '-':
-                if (is_after_variable) {
-                    advance(lexer);
-                    if (lexer->lookahead == '>') {
-                        advance(lexer);
-                        if (is_valid_name_char(lexer)) {
-                            return has_content;
-                        }
-                        break;
-                    }
-                    break;
-                }
-            case '[':
-                if (is_after_variable) {
-                    return has_content;
-                }
-                advance(lexer);
-                break;
-            case '{':
-                advance(lexer);
-                if (lexer->lookahead == '$') {
-                    return has_content;
-                }
-                break;
-            default:
-                if (lexer->eof(lexer)) {
-                    return false;
-                }
-                advance(lexer);
+        if (!advance_encapsed_step(lexer, is_heredoc, is_execution_string)) {
+            return has_content;
         }
-
-        is_after_variable = false;
     }
-
-    return false;
 }
 
 static bool scan_eof(TSLexer *lexer) {
     while (is_php_whitespace(lexer->lookahead)) {
         advance(lexer);
     }
-    if (!lexer->eof(lexer)) {
+    if (lexer->lookahead != 0 || !lexer->eof(lexer)) {
         return false;
     }
     lexer->result_symbol = EOF_TOKEN;
@@ -371,7 +376,7 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     if (valid_symbols[HEREDOC_LINE_START]) {
         lexer->result_symbol = HEREDOC_LINE_START;
         if (scanner->current > 0) {
-            while (iswspace(lexer->lookahead) && lexer->lookahead != '\r' && lexer->lookahead != '\n') {
+            while (is_horizontal_unicode_whitespace(lexer->lookahead)) {
                 advance(lexer);
             }
             scanner->can_close = is_valid_name_char(lexer);
@@ -400,7 +405,7 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
 
         Heredoc heredoc = *current_heredoc(scanner);
 
-        while (iswspace(lexer->lookahead)) {
+        while (is_unicode_whitespace(lexer->lookahead)) {
             skip(lexer);
         }
 
@@ -437,7 +442,7 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
             .parent_can_close = scanner->can_close,
         };
 
-        while (iswspace(lexer->lookahead)) {
+        while (is_unicode_whitespace(lexer->lookahead)) {
             skip(lexer);
         }
 
@@ -488,7 +493,7 @@ static bool scan_namespace_use_prefix(TSLexer *lexer) {
     size_t length = 0;
     bool relative = true;
     while (is_valid_name_char(lexer)) {
-        if (length >= sizeof(relative_prefix) - 1 || towlower(lexer->lookahead) != relative_prefix[length]) {
+        if (length >= sizeof(relative_prefix) - 1 || ascii_tolower(lexer->lookahead) != relative_prefix[length]) {
             relative = false;
         }
         length++;
@@ -604,7 +609,7 @@ static const char *qualified_keyword_start(TSLexer *lexer) {
 
 static bool scan_qualified_keyword(TSLexer *lexer, const char *word) {
     for (; *word; word++) {
-        if (towlower(lexer->lookahead) != *word) {
+        if (ascii_tolower(lexer->lookahead) != *word) {
             return false;
         }
         advance(lexer);

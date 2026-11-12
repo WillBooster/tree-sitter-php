@@ -11,7 +11,7 @@ concurrency:
 permissions:
   contents: read
 jobs:
-  # The scanner depends on the C library (e.g. `iswalnum`), and the tree-sitter CLI compiles the parsers natively with
+  # The scanner depends on the C library (e.g. `iswspace`), and the tree-sitter CLI compiles the parsers natively with
   # each platform's C compiler, so the tests run on other common platforms too; the Test workflow covers ubuntu-latest.
   test:
     strategy:
