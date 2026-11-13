@@ -1,5 +1,9 @@
 //! This crate provides PHP language support for the [tree-sitter] parsing library.
 //!
+//! The grammars carry the `WillBooster/tree-sitter` ABI (`0x5742000c`), which upstream
+//! `tree-sitter` runtimes reject. This crate targets and is tested with
+//! [willbooster-tree-sitter] version 20.0.0 or later in the 20.x series.
+//!
 //! Typically, you will use the [`LANGUAGE_PHP`] constant to add this language to a
 //! tree-sitter [`Parser`], and then use the parser to parse some code:
 //!
@@ -10,14 +14,15 @@
 //! parser
 //!     .set_language(&language.into())
 //!     .expect("Error loading PHP parser");
-//! let tree = parser.parse(code, None).unwrap();
+//! let tree = parser.parse(code).unwrap();
 //! assert!(!tree.root_node().has_error());
 //! ```
 //!
 //! [`LANGUAGE_PHP_ONLY`] parses PHP code that is not embedded in text, where the `<?php` tag is optional.
 //!
-//! [`Parser`]: https://docs.rs/willbooster-tree-sitter/19.1.1/tree_sitter/struct.Parser.html
+//! [`Parser`]: https://docs.rs/willbooster-tree-sitter/20.0.0/tree_sitter/struct.Parser.html
 //! [tree-sitter]: https://tree-sitter.github.io/
+//! [willbooster-tree-sitter]: https://crates.io/crates/willbooster-tree-sitter
 
 use tree_sitter_language::LanguageFn;
 
@@ -50,9 +55,7 @@ mod tests {
         parser
             .set_language(&super::LANGUAGE_PHP.into())
             .expect("Error loading PHP parser");
-        let tree = parser
-            .parse(r#"<?php echo "Hello, World!";"#, None)
-            .unwrap();
+        let tree = parser.parse(r#"<?php echo "Hello, World!";"#).unwrap();
         assert!(!tree.root_node().has_error());
     }
 
@@ -62,7 +65,7 @@ mod tests {
         parser
             .set_language(&super::LANGUAGE_PHP_ONLY.into())
             .expect("Error loading PHP-Only parser");
-        let tree = parser.parse(r#"echo "Hello, World!";"#, None).unwrap();
+        let tree = parser.parse(r#"echo "Hello, World!";"#).unwrap();
         assert!(!tree.root_node().has_error());
     }
 }
