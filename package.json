@@ -50,7 +50,7 @@
     "@types/bun": "1.4.4",
     "@vitest/browser-playwright": "5.1.0",
     "@willbooster/oxlint-config": "1.4.9",
-    "@willbooster/wb": "23.3.0",
+    "@willbooster/wb": "23.3.4",
     "@willbooster/web-tree-sitter": "20.0.0",
     "conventional-changelog-conventionalcommits": "10.4.1",
     "lefthook": "2.2.2",
