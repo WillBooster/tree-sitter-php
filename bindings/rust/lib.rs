@@ -1,8 +1,8 @@
 //! This crate provides PHP language support for the [tree-sitter] parsing library.
 //!
-//! The grammars carry the `WillBooster/tree-sitter` ABI (`0x5742000c`), which upstream
-//! `tree-sitter` runtimes reject. This crate targets and is tested with
-//! [willbooster-tree-sitter] version 20.0.0 or later in the 20.x series.
+//! The grammars carry the `WillBooster/tree-sitter` ABI (`0x5742000d`), which upstream
+//! `tree-sitter` runtimes and WillBooster runtimes prior to 22.0.0 reject. This crate targets and is tested with
+//! [willbooster-tree-sitter] version 23.0.0 or later in the 23.x series.
 //!
 //! Typically, you will use the [`LANGUAGE_PHP`] constant to add this language to a
 //! tree-sitter [`Parser`], and then use the parser to parse some code:
@@ -20,7 +20,7 @@
 //!
 //! [`LANGUAGE_PHP_ONLY`] parses PHP code that is not embedded in text, where the `<?php` tag is optional.
 //!
-//! [`Parser`]: https://docs.rs/willbooster-tree-sitter/20.0.0/tree_sitter/struct.Parser.html
+//! [`Parser`]: https://docs.rs/willbooster-tree-sitter/23.0.0/tree_sitter/struct.Parser.html
 //! [tree-sitter]: https://tree-sitter.github.io/
 //! [willbooster-tree-sitter]: https://crates.io/crates/willbooster-tree-sitter
 

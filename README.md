@@ -16,9 +16,9 @@ This fork builds on upstream's version 0.24.2 grammars with support for absolute
 and asymmetric visibility in constructor property promotion.
 Its external scanner supports heredoc and nowdoc labels without a fixed length limit. It generates the parsers with the
 [WillBooster/tree-sitter](https://github.com/WillBooster/tree-sitter) generator. The parsers carry that fork's own ABI
-number (`0x5742000c`), which upstream Tree-sitter runtimes reject, and that fork's runtime loads no parser that
+number (`0x5742000d`), which upstream Tree-sitter runtimes and WillBooster runtimes prior to 22.0.0 reject, and that fork's runtime loads no parser that
 upstream's generator wrote. This package targets and is tested with the `WillBooster/tree-sitter` runtime
-(`willbooster-tree-sitter`, `@willbooster/web-tree-sitter`) version 20.0.0 or later in the 20.x series.
+(`willbooster-tree-sitter`, `@willbooster/web-tree-sitter`) version 23.0.0 or later in the 23.x series.
 
 It holds two grammars, as upstream does: `php` parses PHP embedded in text, which starts in text mode and enters PHP at
 an opening tag such as `<?php`, and `php_only` parses PHP code on its own, where the opening tag is optional.
@@ -33,7 +33,7 @@ may change; such changes are released as new major versions.
 ## Usage
 
 The npm package ships `tree-sitter-php.wasm` and `tree-sitter-php_only.wasm` for
-[@willbooster/web-tree-sitter](https://www.npmjs.com/package/@willbooster/web-tree-sitter) version 20.0.0 or later in the 20.x series, which runs in Node.js, Bun, browsers, and Cloudflare Workers. In Node.js and Bun, load the grammar from its path:
+[@willbooster/web-tree-sitter](https://www.npmjs.com/package/@willbooster/web-tree-sitter) version 23.0.0 or later in the 23.x series, which runs in Node.js, Bun, browsers, and Cloudflare Workers. In Node.js and Bun, load the grammar from its path:
 
 ```js
 import { fileURLToPath } from 'node:url';
@@ -80,7 +80,7 @@ In Rust, depend on the [crate](https://crates.io/crates/willbooster-tree-sitter-
 fuzzed with:
 
 ```sh
-cargo add willbooster-tree-sitter@20.0.0 --rename tree-sitter
+cargo add willbooster-tree-sitter@23.0.0 --rename tree-sitter
 cargo add willbooster-tree-sitter-php --rename tree-sitter-php
 ```
 
