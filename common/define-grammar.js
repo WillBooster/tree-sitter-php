@@ -779,7 +779,7 @@ module.exports = function defineGrammar(dialect) {
       declare_statement: $ => seq(
         keyword('declare'),
         '(',
-        $.declare_directive,
+        commaSep1($.declare_directive),
         ')',
         choice(
           $.statement,
@@ -794,9 +794,9 @@ module.exports = function defineGrammar(dialect) {
       ),
 
       declare_directive: $ => seq(
-        choice('ticks', 'encoding', 'strict_types'),
+        field('name', choice('ticks', 'encoding', 'strict_types', $.name)),
         '=',
-        $.literal,
+        field('value', $.expression),
       ),
 
       literal: $ => choice(

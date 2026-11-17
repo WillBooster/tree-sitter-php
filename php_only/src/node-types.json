@@ -1833,16 +1833,39 @@
   {
     "type": "declare_directive",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "literal",
-          "named": true
-        }
-      ]
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "encoding",
+            "named": false
+          },
+          {
+            "type": "name",
+            "named": true
+          },
+          {
+            "type": "strict_types",
+            "named": false
+          },
+          {
+            "type": "ticks",
+            "named": false
+          }
+        ]
+      },
+      "value": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "expression",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
