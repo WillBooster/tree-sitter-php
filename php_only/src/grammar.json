@@ -4962,25 +4962,8 @@
           "type": "FIELD",
           "name": "name",
           "content": {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "STRING",
-                "value": "ticks"
-              },
-              {
-                "type": "STRING",
-                "value": "encoding"
-              },
-              {
-                "type": "STRING",
-                "value": "strict_types"
-              },
-              {
-                "type": "SYMBOL",
-                "name": "name"
-              }
-            ]
+            "type": "SYMBOL",
+            "name": "name"
           }
         },
         {

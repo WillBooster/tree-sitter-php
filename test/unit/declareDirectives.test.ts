@@ -12,6 +12,7 @@ test.each(['php', 'php_only'])('%s parses declaration expressions and directive 
       ["encoding='UTF' . '-8'", ['encoding'], ["'UTF' . '-8'"]],
       ["encoding=('UTF-8')", ['encoding'], ["('UTF-8')"]],
       ['ticks=1, strict_types=1', ['ticks', 'strict_types'], ['1', '1']],
+      ['TICKS=1, Strict_Types=1', ['TICKS', 'Strict_Types'], ['1', '1']],
       ['custom=1 + 2', ['custom'], ['1 + 2']],
     ] as const) {
       for (const body of [';', '{ echo 1; }', ': echo 1; enddeclare;']) {
@@ -20,6 +21,7 @@ test.each(['php', 'php_only'])('%s parses declaration expressions and directive 
           expect(tree.rootNode.hasError, tree.rootNode.toString()).toBe(false);
           const parsed = tree.rootNode.descendantsOfType('declare_directive');
           expect(parsed.map((node) => node.childForFieldName('name')?.text)).toEqual(names);
+          expect(parsed.map((node) => node.childForFieldName('name')?.type)).toEqual(names.map(() => 'name'));
           expect(parsed.map((node) => node.childForFieldName('value')?.text)).toEqual(values);
           expect(tree.rootNode.lastNamedChild?.text).toBe('$after = 1;');
         } finally {

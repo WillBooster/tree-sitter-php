@@ -1839,20 +1839,8 @@
         "required": true,
         "types": [
           {
-            "type": "encoding",
-            "named": false
-          },
-          {
             "type": "name",
             "named": true
-          },
-          {
-            "type": "strict_types",
-            "named": false
-          },
-          {
-            "type": "ticks",
-            "named": false
           }
         ]
       },
@@ -5928,10 +5916,6 @@
     "named": false
   },
   {
-    "type": "encoding",
-    "named": false
-  },
-  {
     "type": "enddeclare",
     "named": false
   },
@@ -6132,19 +6116,11 @@
     "named": false
   },
   {
-    "type": "strict_types",
-    "named": false
-  },
-  {
     "type": "switch",
     "named": false
   },
   {
     "type": "throw",
-    "named": false
-  },
-  {
-    "type": "ticks",
     "named": false
   },
   {

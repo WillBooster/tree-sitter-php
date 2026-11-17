@@ -794,7 +794,7 @@ module.exports = function defineGrammar(dialect) {
       ),
 
       declare_directive: $ => seq(
-        field('name', choice('ticks', 'encoding', 'strict_types', $.name)),
+        field('name', $.name),
         '=',
         field('value', $.expression),
       ),
