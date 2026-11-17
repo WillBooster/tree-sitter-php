@@ -4967,8 +4967,13 @@
           "type": "FIELD",
           "name": "name",
           "content": {
-            "type": "SYMBOL",
-            "name": "name"
+            "type": "ALIAS",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_directive_name"
+            },
+            "named": true,
+            "value": "name"
           }
         },
         {
@@ -11226,6 +11231,10 @@
     {
       "type": "SYMBOL",
       "name": "_namespace_use_separator"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_directive_name"
     },
     {
       "type": "SYMBOL",

@@ -1,3 +1,4 @@
+// code-gauge-allow-file fileNcss 424 -- Full-parse scanner states share the lexer and immutable heredoc stack.
 #include "tree_sitter/array.h"
 #include "tree_sitter/parser.h"
 
@@ -20,6 +21,7 @@ enum TokenType {
     QUALIFIED_KEYWORD,
     NAMESPACE_USE_PREFIX,
     NAMESPACE_USE_SEPARATOR,
+    DIRECTIVE_NAME,
     SENTINEL_ERROR, // Unused token used to indicate error recovery mode
 };
 
@@ -373,12 +375,19 @@ static bool scan_namespace_use_line_comment(TSLexer *lexer);
 
 static bool scan_namespace_use_block_comment(TSLexer *lexer);
 
+static bool scan_directive_name(TSLexer *lexer);
+
+// code-gauge-allow functionNcss 32 -- Dispatches the scanner states in lexical precedence order.
 static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     if (valid_symbols[SENTINEL_ERROR]) {
         return false;
     }
 
     lexer->mark_end(lexer);
+
+    if (valid_symbols[DIRECTIVE_NAME]) {
+        return scan_directive_name(lexer);
+    }
 
     if (valid_symbols[HEREDOC_LINE_START]) {
         return scan_heredoc_line_start(scanner, lexer);
@@ -600,6 +609,51 @@ static bool scan_namespace_use_block_comment(TSLexer *lexer) {
         }
     }
     return false;
+}
+
+static bool scan_directive_name(TSLexer *lexer) {
+    static const char *const keywords[] = {
+        "abstract", "and", "array", "as", "break", "callable", "case",
+        "catch", "class", "clone", "const", "continue", "declare", "default",
+        "do", "echo", "else", "elseif", "enddeclare", "endfor", "endforeach",
+        "endif", "endswitch", "endwhile", "extends", "final", "finally", "fn",
+        "for", "foreach", "function", "global", "goto", "if", "implements",
+        "include", "include_once", "instanceof", "insteadof", "interface", "match", "namespace",
+        "new", "or", "print", "private", "protected", "public", "readonly",
+        "require", "require_once", "return", "static", "switch", "throw", "trait",
+        "try", "unset", "use", "var", "while", "xor", "yield",
+        "list", "empty", "eval", "isset", "exit", "die", "__halt_compiler",
+        "__line__", "__file__", "__dir__", "__class__", "__trait__", "__method__", "__function__",
+        "__namespace__", "__property__",
+    };
+    while (is_php_whitespace(lexer->lookahead)) {
+        skip(lexer);
+    }
+    if (!is_valid_name_start(lexer)) {
+        return false;
+    }
+    char name[32];
+    size_t length = 0;
+    bool overflow = false;
+    do {
+        if (length < sizeof(name) - 1) {
+            name[length++] = lexer->lookahead < 128 ? (char)ascii_tolower(lexer->lookahead) : '\x7f';
+        } else {
+            overflow = true;
+        }
+        advance(lexer);
+    } while (is_valid_name_char(lexer));
+    name[length] = '\0';
+    if (!overflow) {
+        for (size_t index = 0; index < sizeof(keywords) / sizeof(keywords[0]); index++) {
+            if (strcmp(name, keywords[index]) == 0) {
+                return false;
+            }
+        }
+    }
+    lexer->mark_end(lexer);
+    lexer->result_symbol = DIRECTIVE_NAME;
+    return true;
 }
 
 static const char *qualified_keyword_start(TSLexer *lexer) {

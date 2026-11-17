@@ -121,6 +121,7 @@ module.exports = function defineGrammar(dialect) {
       $._qualified_keyword,
       $._namespace_use_prefix,
       $._namespace_use_separator,
+      $._directive_name,
       $.sentinel_error, // Unused token used to indicate error recovery mode
     ],
 
@@ -794,7 +795,7 @@ module.exports = function defineGrammar(dialect) {
       ),
 
       declare_directive: $ => seq(
-        field('name', $.name),
+        field('name', alias($._directive_name, $.name)),
         '=',
         field('value', $.expression),
       ),
