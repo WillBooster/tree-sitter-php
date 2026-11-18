@@ -6145,56 +6145,61 @@
                 "type": "SEQ",
                 "members": [
                   {
-                    "type": "CHOICE",
+                    "type": "SEQ",
                     "members": [
                       {
-                        "type": "SYMBOL",
-                        "name": "match_conditional_expression"
+                        "type": "CHOICE",
+                        "members": [
+                          {
+                            "type": "SYMBOL",
+                            "name": "match_conditional_expression"
+                          },
+                          {
+                            "type": "SYMBOL",
+                            "name": "match_default_expression"
+                          }
+                        ]
                       },
                       {
-                        "type": "SYMBOL",
-                        "name": "match_default_expression"
+                        "type": "REPEAT",
+                        "content": {
+                          "type": "SEQ",
+                          "members": [
+                            {
+                              "type": "STRING",
+                              "value": ","
+                            },
+                            {
+                              "type": "CHOICE",
+                              "members": [
+                                {
+                                  "type": "SYMBOL",
+                                  "name": "match_conditional_expression"
+                                },
+                                {
+                                  "type": "SYMBOL",
+                                  "name": "match_default_expression"
+                                }
+                              ]
+                            }
+                          ]
+                        }
                       }
                     ]
                   },
                   {
-                    "type": "REPEAT",
-                    "content": {
-                      "type": "SEQ",
-                      "members": [
-                        {
-                          "type": "STRING",
-                          "value": ","
-                        },
-                        {
-                          "type": "CHOICE",
-                          "members": [
-                            {
-                              "type": "SYMBOL",
-                              "name": "match_conditional_expression"
-                            },
-                            {
-                              "type": "SYMBOL",
-                              "name": "match_default_expression"
-                            }
-                          ]
-                        }
-                      ]
-                    }
+                    "type": "CHOICE",
+                    "members": [
+                      {
+                        "type": "STRING",
+                        "value": ","
+                      },
+                      {
+                        "type": "BLANK"
+                      }
+                    ]
                   }
                 ]
-              },
-              {
-                "type": "BLANK"
-              }
-            ]
-          },
-          {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "STRING",
-                "value": ","
               },
               {
                 "type": "BLANK"
@@ -6579,15 +6584,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "augmented_assignment_expression"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "assignment_expression"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "reference_assignment_expression"
+          "name": "_assignment_expression"
         },
         {
           "type": "SYMBOL",
@@ -6620,6 +6617,23 @@
         {
           "type": "SYMBOL",
           "name": "require_once_expression"
+        }
+      ]
+    },
+    "_assignment_expression": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "assignment_expression"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "augmented_assignment_expression"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "reference_assignment_expression"
         }
       ]
     },
@@ -6747,7 +6761,11 @@
           "members": [
             {
               "type": "SYMBOL",
-              "name": "primary_expression"
+              "name": "_assignment_expression"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_unary_expression"
             },
             {
               "type": "SYMBOL",
@@ -6906,13 +6924,12 @@
                   "value": "{"
                 },
                 {
-                  "type": "ALIAS",
+                  "type": "FIELD",
+                  "name": "name_expression",
                   "content": {
                     "type": "SYMBOL",
                     "name": "expression"
-                  },
-                  "named": true,
-                  "value": "name"
+                  }
                 },
                 {
                   "type": "STRING",
@@ -7218,6 +7235,10 @@
               "members": [
                 {
                   "type": "SYMBOL",
+                  "name": "_assignment_expression"
+                },
+                {
+                  "type": "SYMBOL",
                   "name": "_unary_expression"
                 },
                 {
@@ -7300,31 +7321,6 @@
             "content": {
               "type": "SYMBOL",
               "name": "expression"
-            }
-          }
-        ]
-      }
-    },
-    "cast_variable": {
-      "type": "PREC",
-      "value": -1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "FIELD",
-            "name": "type",
-            "content": {
-              "type": "SYMBOL",
-              "name": "cast_type"
-            }
-          },
-          {
-            "type": "FIELD",
-            "name": "value",
-            "content": {
-              "type": "SYMBOL",
-              "name": "_variable"
             }
           }
         ]
@@ -7548,15 +7544,6 @@
     "_variable": {
       "type": "CHOICE",
       "members": [
-        {
-          "type": "ALIAS",
-          "content": {
-            "type": "SYMBOL",
-            "name": "cast_variable"
-          },
-          "named": true,
-          "value": "cast_expression"
-        },
         {
           "type": "SYMBOL",
           "name": "_new_variable"

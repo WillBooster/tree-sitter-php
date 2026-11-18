@@ -74,3 +74,41 @@ test.each(['php', 'php_only'])('%s accepts switch, match, and readonly function 
     parser.delete();
   }
 });
+
+test.each(['php', 'php_only'])('%s preserves operand expressions and rejects a lone match comma', async (dialect) => {
+  const parser = new Parser().setLanguage(await Language.load(path.resolve(`tree-sitter-${dialect}.wasm`)));
+  try {
+    for (const [source, expression, field, operand] of [
+      ['(int)$x = 1', 'cast_expression', 'value', 'assignment_expression'],
+      ['(int)$x += 1', 'cast_expression', 'value', 'augmented_assignment_expression'],
+      ['(int)$x =& $y', 'cast_expression', 'value', 'reference_assignment_expression'],
+      ['clone $x = $y', 'clone_expression', undefined, 'assignment_expression'],
+      ['C::{"VALUE"}', 'class_constant_access_expression', 'name_expression', 'encapsed_string'],
+      ['C::{getName() . $tail}', 'class_constant_access_expression', 'name_expression', 'binary_expression'],
+    ] as const) {
+      const tree = parser.parse(`<?php ${source};`)!;
+      try {
+        expect(tree.rootNode.hasError, source).toBe(false);
+        const outer = tree.rootNode.descendantsOfType('expression_statement')[0]?.firstNamedChild;
+        expect(outer?.type, source).toBe(expression);
+        expect((field ? outer?.childForFieldName(field) : outer?.firstNamedChild)?.type, source).toBe(operand);
+      } finally {
+        tree.delete();
+      }
+    }
+    for (const [arms, invalid] of [
+      ['', false],
+      ['1 => 2,', false],
+      [',', true],
+    ] as const) {
+      const tree = parser.parse(`<?php match (1) {${arms}};`)!;
+      try {
+        expect(tree.rootNode.hasError, arms).toBe(invalid);
+      } finally {
+        tree.delete();
+      }
+    }
+  } finally {
+    parser.delete();
+  }
+});

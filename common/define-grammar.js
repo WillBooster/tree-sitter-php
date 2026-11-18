@@ -1009,13 +1009,12 @@ module.exports = function defineGrammar(dialect) {
       match_block: $ => prec.left(
         seq(
           '{',
-          commaSep(
-            choice(
-              $.match_conditional_expression,
-              $.match_default_expression,
+          optional(
+            seq(
+              commaSep1(choice($.match_conditional_expression, $.match_default_expression)),
+              optional(','),
             ),
           ),
-          optional(','),
           '}',
         ),
       ),
@@ -1079,9 +1078,7 @@ module.exports = function defineGrammar(dialect) {
       expression: $ => choice(
         $.conditional_expression,
         $.match_expression,
-        $.augmented_assignment_expression,
-        $.assignment_expression,
-        $.reference_assignment_expression,
+        $._assignment_expression,
         $.yield_expression,
         $._unary_expression,
         $.error_suppression_expression,
@@ -1090,6 +1087,12 @@ module.exports = function defineGrammar(dialect) {
         $.include_once_expression,
         $.require_expression,
         $.require_once_expression,
+      ),
+
+      _assignment_expression: $ => choice(
+        $.assignment_expression,
+        $.augmented_assignment_expression,
+        $.reference_assignment_expression,
       ),
 
       _unary_expression: $ => choice(
@@ -1115,7 +1118,8 @@ module.exports = function defineGrammar(dialect) {
       clone_expression: $ => seq(
         keyword('clone'),
         choice(
-          $.primary_expression,
+          $._assignment_expression,
+          $._unary_expression,
           $.match_expression,
           $.yield_expression,
           $.include_expression,
@@ -1153,7 +1157,7 @@ module.exports = function defineGrammar(dialect) {
         '::',
         choice(
           $._unreserved_identifier,
-          seq('{', alias($.expression, $.name), '}'),
+          seq('{', field('name_expression', $.expression), '}'),
         ),
       ),
 
@@ -1207,6 +1211,7 @@ module.exports = function defineGrammar(dialect) {
       cast_expression: $ => prec(PREC.CAST, seq(
         field('type', $.cast_type),
         field('value', choice(
+          $._assignment_expression,
           $._unary_expression,
           alias($._cast_exponential_expression, $.binary_expression),
           $.match_expression,
@@ -1223,11 +1228,6 @@ module.exports = function defineGrammar(dialect) {
         field('left', choice($._unary_expression, $.match_expression)),
         field('operator', '**'),
         field('right', $.expression),
-      )),
-
-      cast_variable: $ => prec(PREC.CAST, seq(
-        field('type', $.cast_type),
-        field('value', $._variable),
       )),
 
       assignment_expression: $ => prec.right(PREC.ASSIGNMENT, seq(
@@ -1278,7 +1278,6 @@ module.exports = function defineGrammar(dialect) {
       )),
 
       _variable: $ => choice(
-        alias($.cast_variable, $.cast_expression),
         $._new_variable,
         $._callable_variable,
         $.scoped_property_access_expression,
