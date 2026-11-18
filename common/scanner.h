@@ -1,4 +1,4 @@
-// code-gauge-allow-file fileNcss 438 -- Full-parse scanner states share the lexer and immutable heredoc stack.
+// code-gauge-allow-file fileNcss 447 -- Full-parse scanner states share the lexer and immutable heredoc stack.
 #include "tree_sitter/array.h"
 #include "tree_sitter/parser.h"
 
@@ -23,6 +23,7 @@ enum TokenType {
     NAMESPACE_USE_SEPARATOR,
     DIRECTIVE_NAME,
     EXIT_INTERPOLATION_IDENTIFIER,
+    LINE_COMMENT_BODY,
     SENTINEL_ERROR, // Unused token used to indicate error recovery mode
 };
 
@@ -372,7 +373,9 @@ static bool scan_namespace_use_gap(TSLexer *lexer);
 
 static bool scan_namespace_use_comment(TSLexer *lexer);
 
-static bool scan_namespace_use_line_comment(TSLexer *lexer);
+static bool scan_comment_tail(TSLexer *lexer);
+
+static bool scan_line_comment_body(TSLexer *lexer, bool emit);
 
 static bool scan_namespace_use_block_comment(TSLexer *lexer);
 
@@ -380,8 +383,8 @@ static bool scan_directive_name(TSLexer *lexer);
 
 static bool scan_exit_interpolation_identifier(TSLexer *lexer);
 
-// code-gauge-allow functionCognitiveComplexity 17 -- Selects a lexical state before consuming input.
-// code-gauge-allow functionNcss 34 -- Dispatches the scanner states in lexical precedence order.
+// code-gauge-allow functionCognitiveComplexity 18 -- Selects a lexical state before consuming input.
+// code-gauge-allow functionNcss 36 -- Dispatches the scanner states in lexical precedence order.
 static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     if (valid_symbols[SENTINEL_ERROR]) {
         return false;
@@ -392,6 +395,10 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     if (valid_symbols[EXIT_INTERPOLATION_IDENTIFIER] &&
         (ascii_tolower(lexer->lookahead) == 'e' || ascii_tolower(lexer->lookahead) == 'd')) {
         return scan_exit_interpolation_identifier(lexer);
+    }
+
+    if (valid_symbols[LINE_COMMENT_BODY]) {
+        return scan_comment_tail(lexer);
     }
 
     if (valid_symbols[DIRECTIVE_NAME]) {
@@ -577,12 +584,12 @@ static bool scan_namespace_use_gap(TSLexer *lexer) {
 static bool scan_namespace_use_comment(TSLexer *lexer) {
     if (lexer->lookahead == '#') {
         advance(lexer);
-        return scan_namespace_use_line_comment(lexer);
+        return scan_line_comment_body(lexer, false);
     }
     advance(lexer);
     if (lexer->lookahead == '/') {
         advance(lexer);
-        return scan_namespace_use_line_comment(lexer);
+        return scan_line_comment_body(lexer, false);
     }
     if (lexer->lookahead != '*') {
         return false;
@@ -591,16 +598,25 @@ static bool scan_namespace_use_comment(TSLexer *lexer) {
     return scan_namespace_use_block_comment(lexer);
 }
 
-static bool scan_namespace_use_line_comment(TSLexer *lexer) {
-    while (lexer->lookahead != 0 && lexer->lookahead != '\r' && lexer->lookahead != '\n') {
-        if (lexer->lookahead == '?') {
-            advance(lexer);
-            if (lexer->lookahead == '>') {
-                return false;
-            }
-        } else {
-            advance(lexer);
+static bool scan_comment_tail(TSLexer *lexer) {
+    scan_line_comment_body(lexer, true);
+    lexer->result_symbol = LINE_COMMENT_BODY;
+    return true;
+}
+
+static bool scan_line_comment_body(TSLexer *lexer, bool emit) {
+    while (!lexer->eof(lexer) && lexer->lookahead != '\r' && lexer->lookahead != '\n') {
+        bool question_mark = lexer->lookahead == '?';
+        if (emit && question_mark) {
+            lexer->mark_end(lexer);
         }
+        advance(lexer);
+        if (question_mark && lexer->lookahead == '>') {
+            return false;
+        }
+    }
+    if (emit) {
+        lexer->mark_end(lexer);
     }
     return true;
 }

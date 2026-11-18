@@ -1659,6 +1659,12 @@
     }
   },
   {
+    "type": "comment",
+    "named": true,
+    "extra": true,
+    "fields": {}
+  },
+  {
     "type": "compound_statement",
     "named": true,
     "fields": {},
@@ -5904,11 +5910,6 @@
   {
     "type": "clone",
     "named": false
-  },
-  {
-    "type": "comment",
-    "named": true,
-    "extra": true
   },
   {
     "type": "const",

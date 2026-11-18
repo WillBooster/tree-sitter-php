@@ -123,6 +123,7 @@ module.exports = function defineGrammar(dialect) {
       $._namespace_use_separator,
       $._directive_name,
       $._exit_interpolation_identifier,
+      $._line_comment_body,
       $.sentinel_error, // Unused token used to indicate error recovery mode
     ],
 
@@ -1783,19 +1784,16 @@ module.exports = function defineGrammar(dialect) {
 
       name: _ => NAME_PATTERN,
 
-      comment: _ => token(choice(
-        seq(
-          choice('//', /#[^?\[?\r?\n]/),
-          repeat(/[^?\r?\n]|\?[^>\r\n]/),
-          optional(/\?\r?\n/),
-        ),
-        '#',
-        seq(
+      comment: $ => choice(
+        seq($._line_comment_start, $._line_comment_body),
+        token(seq(
           '/*',
           /[^*]*\*+([^/*][^*]*\*+)*/,
           '/',
-        ),
-      )),
+        )),
+      ),
+
+      _line_comment_start: _ => token(choice('//', '#')),
 
       _semicolon: $ => choice($._automatic_semicolon, ';'),
     },

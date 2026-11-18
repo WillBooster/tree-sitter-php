@@ -11172,52 +11172,24 @@
       "flags": "u"
     },
     "comment": {
-      "type": "TOKEN",
-      "content": {
-        "type": "CHOICE",
-        "members": [
-          {
-            "type": "SEQ",
-            "members": [
-              {
-                "type": "CHOICE",
-                "members": [
-                  {
-                    "type": "STRING",
-                    "value": "//"
-                  },
-                  {
-                    "type": "PATTERN",
-                    "value": "#[^?\\[?\\r?\\n]"
-                  }
-                ]
-              },
-              {
-                "type": "REPEAT",
-                "content": {
-                  "type": "PATTERN",
-                  "value": "[^?\\r?\\n]|\\?[^>\\r\\n]"
-                }
-              },
-              {
-                "type": "CHOICE",
-                "members": [
-                  {
-                    "type": "PATTERN",
-                    "value": "\\?\\r?\\n"
-                  },
-                  {
-                    "type": "BLANK"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "STRING",
-            "value": "#"
-          },
-          {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_line_comment_start"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_line_comment_body"
+            }
+          ]
+        },
+        {
+          "type": "TOKEN",
+          "content": {
             "type": "SEQ",
             "members": [
               {
@@ -11233,6 +11205,22 @@
                 "value": "/"
               }
             ]
+          }
+        }
+      ]
+    },
+    "_line_comment_start": {
+      "type": "TOKEN",
+      "content": {
+        "type": "CHOICE",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "//"
+          },
+          {
+            "type": "STRING",
+            "value": "#"
           }
         ]
       }
@@ -11387,6 +11375,10 @@
     {
       "type": "SYMBOL",
       "name": "_exit_interpolation_identifier"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_line_comment_body"
     },
     {
       "type": "SYMBOL",
