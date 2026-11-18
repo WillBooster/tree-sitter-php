@@ -1734,9 +1734,8 @@
           {
             "type": "ALIAS",
             "content": {
-              "type": "PATTERN",
-              "value": "enum",
-              "flags": "i"
+              "type": "SYMBOL",
+              "name": "_enum_declaration_keyword"
             },
             "named": false,
             "value": "enum"
@@ -6633,23 +6632,8 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SYMBOL",
-              "name": "_identifier"
-            },
-            {
-              "type": "ALIAS",
-              "content": {
-                "type": "PATTERN",
-                "value": "enum",
-                "flags": "i"
-              },
-              "named": true,
-              "value": "name"
-            }
-          ]
+          "type": "SYMBOL",
+          "name": "_identifier"
         },
         {
           "type": "STRING",
@@ -12257,6 +12241,10 @@
     {
       "type": "SYMBOL",
       "name": "_readonly_call_name"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_enum_declaration_keyword"
     },
     {
       "type": "SYMBOL",

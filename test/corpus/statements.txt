@@ -465,10 +465,18 @@ goto foo;
   (goto_statement (name)))
 
 =========================================
-Contextual enum label
+Contextual enum keyword
 =========================================
 
 <?php
+Enum::run();
+Enum::$value = 1;
+Enum::VALUE;
+Enum();
+Enum;
+eNuM/* gap */State {}
+class Enum extends Base {}
+class Local implements Enum {}
 goto EnUm;
 EnUm:
 echo 1;
@@ -477,6 +485,25 @@ echo 1;
 
 (program
   (php_tag)
+  (expression_statement
+    (scoped_call_expression
+      scope: (name)
+      name: (name)
+      arguments: (arguments)))
+  (expression_statement
+    (assignment_expression
+      left: (scoped_property_access_expression
+        scope: (name)
+        name: (variable_name (name)))
+      right: (integer)))
+  (expression_statement
+    (class_constant_access_expression (name) (name)))
+  (expression_statement
+    (function_call_expression function: (name) arguments: (arguments)))
+  (expression_statement (name))
+  (enum_declaration (comment) name: (name) body: (enum_declaration_list))
+  (class_declaration name: (name) (base_clause (name)) body: (declaration_list))
+  (class_declaration name: (name) (class_interface_clause (name)) body: (declaration_list))
   (goto_statement (name))
   (named_label_statement (name))
   (echo_statement (integer)))
