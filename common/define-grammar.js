@@ -808,7 +808,11 @@ module.exports = function defineGrammar(dialect) {
         $.null,
       ),
 
-      float: _ => /\d*(_\d+)*((\.\d*(_\d+)*)?([eE][\+-]?\d+(_\d+)*)|(\.\d*(_\d+)*)([eE][\+-]?\d+(_\d+)*)?)/,
+      float: _ => token(choice(
+        /\d+(_\d+)*[eE][+-]?\d+(_\d+)*/,
+        /\d+(_\d+)*\.(\d+(_\d+)*)?([eE][+-]?\d+(_\d+)*)?/,
+        /\.\d+(_\d+)*([eE][+-]?\d+(_\d+)*)?/,
+      )),
 
       try_statement: $ => seq(
         keyword('try'),
