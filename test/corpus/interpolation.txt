@@ -112,13 +112,13 @@ $a = 'This gets echoed twice';
   (php_tag)
   (expression_statement (assignment_expression (variable_name (name)) (string (string_content))))
   (text_interpolation (php_end_tag) (php_tag))
-  (expression_statement (variable_name (name)))
+  (echo_statement (variable_name (name)))
   (text_interpolation (php_end_tag) (text) (php_tag))
   (expression_statement (assignment_expression (variable_name (name)) (integer)))
   (text_interpolation (php_end_tag) (php_tag))
   (echo_statement (encapsed_string (variable_name (name))))
   (text_interpolation (php_end_tag) (php_tag))
-  (expression_statement (encapsed_string (variable_name (name))))
+  (echo_statement (encapsed_string (variable_name (name))))
   (text_interpolation (php_end_tag)))
 
 ======================
@@ -240,6 +240,6 @@ octothorpe immediately after text interpolation
 (program
   (text)
   (php_tag)
-  (expression_statement
+  (echo_statement
     (variable_name (name)))
   (text_interpolation (php_end_tag) (text)))

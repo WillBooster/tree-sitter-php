@@ -20,30 +20,32 @@ const PREC = {
   LOGICAL_OR_2: 1,
   LOGICAL_XOR: 2,
   LOGICAL_AND_2: 3,
-  ASSIGNMENT: 4,
-  TERNARY: 5,
-  NULL_COALESCE: 6,
-  LOGICAL_OR_1: 7,
-  LOGICAL_AND_1: 8,
-  BITWISE_OR: 9,
-  BITWISE_XOR: 10,
-  BITWISE_AND: 11,
-  EQUALITY: 12,
-  INEQUALITY: 13,
-  PIPE: 14,
-  CONCAT: 15,
-  SHIFT: 16,
-  PLUS: 17,
-  TIMES: 18,
-  NEG: 19,
-  EXPONENTIAL: 20,
+  PRINT: 4,
+  ASSIGNMENT: 5,
+  TERNARY: 6,
+  NULL_COALESCE: 7,
+  LOGICAL_OR_1: 8,
+  LOGICAL_AND_1: 9,
+  BITWISE_OR: 10,
+  BITWISE_XOR: 11,
+  BITWISE_AND: 12,
+  EQUALITY: 13,
+  INEQUALITY: 14,
+  PIPE: 15,
+  CONCAT: 16,
+  SHIFT: 17,
+  PLUS: 18,
+  TIMES: 19,
+  NOT: 20,
   INSTANCEOF: 21,
-  INC: 22,
-  SCOPE: 23,
-  NEW: 24,
-  CALL: 25,
-  MEMBER: 26,
-  DEREF: 27,
+  NEG: 22,
+  EXPONENTIAL: 23,
+  INC: 24,
+  SCOPE: 25,
+  NEW: 26,
+  CALL: 27,
+  MEMBER: 28,
+  DEREF: 29,
 };
 
 /**
@@ -125,6 +127,8 @@ module.exports = function defineGrammar(dialect) {
       $._exit_interpolation_identifier,
       $._line_comment_body,
       $._hash_comment_body,
+      $._php_echo_tag,
+      $._short_echo_keyword,
       $.sentinel_error, // Unused token used to indicate error recovery mode
     ],
 
@@ -174,26 +178,28 @@ module.exports = function defineGrammar(dialect) {
           return seq(
             optional($.text),
             optional(seq(
-              $.php_tag,
+              $._php_start,
               repeat($.statement),
             )),
           );
         }
 
         return seq(
-          optional($.php_tag),
+          optional($._php_start),
           repeat($.statement),
           optional($.php_end_tag),
         );
       },
 
-      php_tag: _ => /<\?([pP][hH][pP]|=)?/,
+      _php_start: $ => choice($.php_tag, alias($._php_echo_tag, $.php_tag)),
+
+      php_tag: _ => /<\?([pP][hH][pP])?/,
       php_end_tag: _ => '?>',
 
       text_interpolation: $ => seq(
         $.php_end_tag,
         optional($.text),
-        choice($.php_tag, $._eof),
+        choice($._php_start, $._eof),
       ),
 
       text: _ => repeat1(choice(
@@ -233,6 +239,8 @@ module.exports = function defineGrammar(dialect) {
       ),
 
       empty_statement: _ => prec(-1, ';'),
+
+      _required_statement: $ => choice($.statement, alias($._automatic_semicolon, $.empty_statement)),
 
       reference_modifier: _ => '&',
 
@@ -572,7 +580,7 @@ module.exports = function defineGrammar(dialect) {
         optional(field('attributes', $.attribute_list)),
         keyword('function'),
         optional($.reference_modifier),
-        field('name', $._identifier),
+        field('name', choice($._identifier, alias(keyword('readonly', false), $.name))),
         field('parameters', $.formal_parameters),
         optional($._return_type),
         field('body', $.compound_statement),
@@ -762,7 +770,7 @@ module.exports = function defineGrammar(dialect) {
         $.expression,
       ),
 
-      echo_statement: $ => seq(keyword('echo'), $._expressions, $._semicolon),
+      echo_statement: $ => seq(choice(keyword('echo'), $._short_echo_keyword), $._expressions, $._semicolon),
 
       exit_expression: _ => choice(keyword('exit'), keyword('die')),
 
@@ -877,7 +885,7 @@ module.exports = function defineGrammar(dialect) {
         keyword('while'),
         field('condition', $.parenthesized_expression),
         choice(
-          field('body', $.statement),
+          field('body', $._required_statement),
           seq(
             field('body', $.colon_block),
             keyword('endwhile'),
@@ -888,7 +896,7 @@ module.exports = function defineGrammar(dialect) {
 
       do_statement: $ => seq(
         keyword('do'),
-        field('body', $.statement),
+        field('body', $._required_statement),
         keyword('while'),
         field('condition', $.parenthesized_expression),
         $._semicolon,
@@ -958,7 +966,7 @@ module.exports = function defineGrammar(dialect) {
         field('condition', $.parenthesized_expression),
         choice(
           seq(
-            field('body', $.statement),
+            field('body', $._required_statement),
             repeat(field('alternative', $.else_if_clause)),
             optional(field('alternative', $.else_clause)),
           ),
@@ -980,12 +988,12 @@ module.exports = function defineGrammar(dialect) {
       else_if_clause: $ => seq(
         keyword('elseif'),
         field('condition', $.parenthesized_expression),
-        field('body', $.statement),
+        field('body', $._required_statement),
       ),
 
       else_clause: $ => seq(
         keyword('else'),
-        field('body', $.statement),
+        field('body', $._required_statement),
       ),
 
       else_if_clause_2: $ => seq(
@@ -1029,6 +1037,7 @@ module.exports = function defineGrammar(dialect) {
 
       match_default_expression: $ => seq(
         keyword('default'),
+        optional(','),
         '=>',
         field('return_expression', $.expression),
       ),
@@ -1042,11 +1051,13 @@ module.exports = function defineGrammar(dialect) {
       switch_block: $ => choice(
         seq(
           '{',
+          optional(';'),
           repeat(choice($.case_statement, $.default_statement)),
           '}',
         ),
         seq(
           ':',
+          optional(';'),
           repeat(choice($.case_statement, $.default_statement)),
           keyword('endswitch'),
           $._semicolon,
@@ -1095,10 +1106,16 @@ module.exports = function defineGrammar(dialect) {
         $.cast_expression,
       ),
 
-      unary_op_expression: $ => prec.left(PREC.NEG, seq(
-        field('operator', choice('+', '-', '~', '!')),
-        field('argument', $.expression),
-      )),
+      unary_op_expression: $ => choice(
+        prec.left(PREC.NOT, seq(
+          field('operator', '!'),
+          field('argument', $.expression),
+        )),
+        prec.left(PREC.NEG, seq(
+          field('operator', choice('+', '-', '~')),
+          field('argument', $.expression),
+        )),
+      ),
 
       error_suppression_expression: $ => prec(PREC.NEG, seq('@', $.expression)),
 
@@ -1147,9 +1164,9 @@ module.exports = function defineGrammar(dialect) {
         ),
       ),
 
-      print_intrinsic: $ => seq(
+      print_intrinsic: $ => prec.right(PREC.PRINT, seq(
         keyword('print'), $.expression,
-      ),
+      )),
 
       object_creation_expression: $ => choice(
         $._new_dereferencable_expression,
@@ -1365,7 +1382,7 @@ module.exports = function defineGrammar(dialect) {
       )),
 
       function_call_expression: $ => prec(PREC.CALL, seq(
-        field('function', choice($._name, $._callable_expression)),
+        field('function', choice($._name, alias(keyword('readonly', false), $.name), $._callable_expression)),
         field('arguments', $.arguments),
       )),
 
@@ -1715,8 +1732,8 @@ module.exports = function defineGrammar(dialect) {
       )),
 
       binary_expression: $ => choice(
-        prec(PREC.INSTANCEOF, seq(
-          field('left', $._unary_expression),
+        prec.left(PREC.INSTANCEOF, seq(
+          field('left', $.expression),
           field('operator', keyword('instanceof')),
           field('right', $._class_name_reference),
         )),

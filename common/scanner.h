@@ -1,4 +1,4 @@
-// code-gauge-allow-file fileNcss 449 -- Full-parse scanner states share the lexer and immutable heredoc stack.
+// code-gauge-allow-file fileNcss 474 -- Full-parse scanner states share the lexer and immutable heredoc stack.
 #include "tree_sitter/array.h"
 #include "tree_sitter/parser.h"
 
@@ -25,6 +25,8 @@ enum TokenType {
     EXIT_INTERPOLATION_IDENTIFIER,
     LINE_COMMENT_BODY,
     HASH_COMMENT_BODY,
+    PHP_ECHO_TAG,
+    SHORT_ECHO_KEYWORD,
     SENTINEL_ERROR, // Unused token used to indicate error recovery mode
 };
 
@@ -56,6 +58,7 @@ typedef struct {
     Array(Heredoc) heredocs;
     uint32_t current;
     bool can_close;
+    bool pending_echo;
 } Scanner;
 
 typedef enum { NoPrefix, PrefixRejected, PrefixAccepted } PrefixScanResult;
@@ -67,14 +70,15 @@ static inline void skip(TSLexer *lexer) { lexer->advance(lexer, true); }
 // The runtime destroys the scanner at the end of each full parse. Keep immutable stack records alive until then so
 // deserialization can restore any parser branch without copying labels into the fixed-size serialization buffer.
 static unsigned serialize(Scanner *scanner, char *buffer) {
-    if (scanner->current == 0) {
+    if (scanner->current == 0 && !scanner->pending_echo) {
         return 0;
     }
-    if (scanner->current < 0x80) {
-        buffer[0] = (char)((scanner->current << 1) | (scanner->can_close ? 1u : 0u));
+    uint8_t flags = (scanner->can_close ? 1u : 0u) | (scanner->pending_echo ? 2u : 0u);
+    if (scanner->current < 0x40) {
+        buffer[0] = (char)((scanner->current << 2) | flags);
         return 1;
     }
-    buffer[0] = (char)(scanner->can_close ? 1 : 0);
+    buffer[0] = (char)flags;
     memcpy(buffer + 1, &scanner->current, sizeof(scanner->current));
     return 1 + sizeof(scanner->current);
 }
@@ -82,16 +86,17 @@ static unsigned serialize(Scanner *scanner, char *buffer) {
 static void deserialize(Scanner *scanner, const char *buffer, unsigned length) {
     scanner->current = 0;
     scanner->can_close = false;
+    scanner->pending_echo = false;
     if (length == 0) {
         return;
     }
+    uint8_t packed = (uint8_t)buffer[0];
+    scanner->can_close = (packed & 1u) != 0;
+    scanner->pending_echo = (packed & 2u) != 0;
     if (length == 1) {
-        uint8_t packed = (uint8_t)buffer[0];
-        scanner->current = packed >> 1;
-        scanner->can_close = (packed & 1u) != 0;
+        scanner->current = packed >> 2;
     } else {
         assert(length == 1 + sizeof(scanner->current));
-        scanner->can_close = buffer[0] != 0;
         memcpy(&scanner->current, buffer + 1, sizeof(scanner->current));
     }
     assert(scanner->current <= scanner->heredocs.size);
@@ -382,16 +387,32 @@ static bool scan_namespace_use_block_comment(TSLexer *lexer);
 
 static bool scan_directive_name(TSLexer *lexer);
 
+static bool scan_php_echo_tag(Scanner *scanner, TSLexer *lexer);
+
 static bool scan_exit_interpolation_identifier(TSLexer *lexer);
 
-// code-gauge-allow functionCognitiveComplexity 21 -- Selects a lexical state before consuming input.
-// code-gauge-allow functionNcss 36 -- Dispatches the scanner states in lexical precedence order.
+// code-gauge-allow functionCognitiveComplexity 28 -- Selects a lexical state before consuming input.
+// code-gauge-allow functionNcss 45 -- Dispatches the scanner states in lexical precedence order.
 static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     if (valid_symbols[SENTINEL_ERROR]) {
         return false;
     }
 
     lexer->mark_end(lexer);
+
+    if (scanner->pending_echo && valid_symbols[SHORT_ECHO_KEYWORD]) {
+        scanner->pending_echo = false;
+        lexer->result_symbol = SHORT_ECHO_KEYWORD;
+        return true;
+    }
+    if (valid_symbols[PHP_ECHO_TAG]) {
+        while (is_php_whitespace(lexer->lookahead)) {
+            skip(lexer);
+        }
+        if (lexer->lookahead == '<') {
+            return scan_php_echo_tag(scanner, lexer);
+        }
+    }
 
     if (valid_symbols[EXIT_INTERPOLATION_IDENTIFIER] &&
         (ascii_tolower(lexer->lookahead) == 'e' || ascii_tolower(lexer->lookahead) == 'd')) {
@@ -450,6 +471,22 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     lexer->result_symbol = AUTOMATIC_SEMICOLON;
     advance(lexer);
     return lexer->lookahead == '>';
+}
+
+static bool scan_php_echo_tag(Scanner *scanner, TSLexer *lexer) {
+    advance(lexer);
+    if (lexer->lookahead != '?') {
+        return false;
+    }
+    advance(lexer);
+    if (lexer->lookahead != '=') {
+        return false;
+    }
+    advance(lexer);
+    lexer->mark_end(lexer);
+    scanner->pending_echo = true;
+    lexer->result_symbol = PHP_ECHO_TAG;
+    return true;
 }
 
 static bool scan_heredoc_line_start(Scanner *scanner, TSLexer *lexer) {
