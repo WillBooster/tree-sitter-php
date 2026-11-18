@@ -18,6 +18,21 @@ test.each(['php', 'php_only'])('%s parses exit and die expressions and complete 
           tree.delete();
         }
       }
+      for (const source of [
+        `foo(${name}: 1);`,
+        `${name}\\foo();`,
+        `foo\\${name}();`,
+        `namespace ${name}\\N; class C {const ${name}=1;} echo C::${name};`,
+        `use ${name}\\N as Alias;`,
+      ]) {
+        const tree = parser.parse(`<?php ${source}`)!;
+        try {
+          expect(tree.rootNode.hasError, tree.rootNode.toString()).toBe(false);
+          expect(tree.rootNode.descendantsOfType('exit_expression')).toHaveLength(0);
+        } finally {
+          tree.delete();
+        }
+      }
       for (const args of ['', '1', 'status: "bye"', '...["bye"]', '"first", print("second")', '...']) {
         const tree = parser.parse(`<?php $value = ${name}(${args});`)!;
         try {

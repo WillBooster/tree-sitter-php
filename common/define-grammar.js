@@ -1756,7 +1756,7 @@ module.exports = function defineGrammar(dialect) {
 
       _unreserved_identifier: $ => choice(
         reserved('nothing', $.name),
-        alias(choice(...IDENTIFIER_TYPE_KEYWORDS, keyword('unset', false)), $.name),
+        alias(choice(...IDENTIFIER_TYPE_KEYWORDS, keyword('unset', false), keyword('exit', false), keyword('die', false)), $.name),
       ),
 
       _identifier: $ => choice(

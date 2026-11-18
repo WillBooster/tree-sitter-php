@@ -10991,6 +10991,16 @@
                 "type": "PATTERN",
                 "value": "unset",
                 "flags": "i"
+              },
+              {
+                "type": "PATTERN",
+                "value": "exit",
+                "flags": "i"
+              },
+              {
+                "type": "PATTERN",
+                "value": "die",
+                "flags": "i"
               }
             ]
           },
