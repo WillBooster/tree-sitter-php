@@ -1,4 +1,4 @@
-// code-gauge-allow-file fileNcss 511 -- Full-parse scanner states share the lexer and immutable heredoc stack.
+// code-gauge-allow-file fileNcss 521 -- Full-parse scanner states share the lexer and immutable heredoc stack.
 #include "tree_sitter/array.h"
 #include "tree_sitter/parser.h"
 
@@ -485,7 +485,6 @@ static bool scan_close_semicolon(TSLexer *lexer, const bool *valid_symbols) {
         return false;
     }
     if (valid_symbols[ADJACENT_PHP_BLOCKS] && scan_adjacent_php_blocks(lexer)) {
-        lexer->mark_end(lexer);
         lexer->result_symbol = ADJACENT_PHP_BLOCKS;
         return true;
     }
@@ -501,12 +500,19 @@ static bool scan_adjacent_php_blocks(TSLexer *lexer) {
     } else if (lexer->lookahead == '\n') {
         advance(lexer);
     }
-    const char tag[] = "<?php";
-    for (const char *character = tag; *character; character++) {
-        if (ascii_tolower(lexer->lookahead) != *character) return false;
+    if (lexer->lookahead != '<') return false;
+    advance(lexer);
+    if (lexer->lookahead != '?') return false;
+    advance(lexer);
+    if (lexer->lookahead == '=') return false;
+    lexer->mark_end(lexer);
+    const char suffix[] = "php";
+    for (const char *character = suffix; *character; character++) {
+        if (ascii_tolower(lexer->lookahead) != *character) return true;
         advance(lexer);
     }
-    return lexer->eof(lexer) || is_php_whitespace(lexer->lookahead);
+    if (lexer->eof(lexer) || is_php_whitespace(lexer->lookahead)) lexer->mark_end(lexer);
+    return true;
 }
 
 static bool scan_php_echo_tag(Scanner *scanner, TSLexer *lexer) {
