@@ -465,6 +465,23 @@ goto foo;
   (goto_statement (name)))
 
 =========================================
+Contextual enum label
+=========================================
+
+<?php
+goto EnUm;
+EnUm:
+echo 1;
+
+---
+
+(program
+  (php_tag)
+  (goto_statement (name))
+  (named_label_statement (name))
+  (echo_statement (integer)))
+
+=========================================
 Exit expressions
 =========================================
 

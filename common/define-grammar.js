@@ -1091,7 +1091,10 @@ module.exports = function defineGrammar(dialect) {
 
       compound_statement: $ => seq('{', repeat($._statement_list_item), '}'),
 
-      named_label_statement: $ => seq($._identifier, ':'),
+      named_label_statement: $ => seq(
+        choice($._identifier, alias(keyword('enum', false), $.name)),
+        ':',
+      ),
 
       expression_statement: $ => seq($.expression, $._semicolon),
 

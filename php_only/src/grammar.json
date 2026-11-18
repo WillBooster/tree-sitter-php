@@ -6633,8 +6633,23 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "SYMBOL",
-          "name": "_identifier"
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_identifier"
+            },
+            {
+              "type": "ALIAS",
+              "content": {
+                "type": "PATTERN",
+                "value": "enum",
+                "flags": "i"
+              },
+              "named": true,
+              "value": "name"
+            }
+          ]
         },
         {
           "type": "STRING",
