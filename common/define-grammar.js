@@ -124,6 +124,7 @@ module.exports = function defineGrammar(dialect) {
       $._directive_name,
       $._exit_interpolation_identifier,
       $._line_comment_body,
+      $._hash_comment_body,
       $.sentinel_error, // Unused token used to indicate error recovery mode
     ],
 
@@ -1785,7 +1786,8 @@ module.exports = function defineGrammar(dialect) {
       name: _ => NAME_PATTERN,
 
       comment: $ => choice(
-        seq($._line_comment_start, $._line_comment_body),
+        seq($._slash_comment_start, $._line_comment_body),
+        seq($._hash_comment_start, $._hash_comment_body),
         token(seq(
           '/*',
           /[^*]*\*+([^/*][^*]*\*+)*/,
@@ -1793,7 +1795,9 @@ module.exports = function defineGrammar(dialect) {
         )),
       ),
 
-      _line_comment_start: _ => token(choice('//', '#')),
+      _slash_comment_start: _ => /\/\//,
+
+      _hash_comment_start: _ => /#/,
 
       _semicolon: $ => choice($._automatic_semicolon, ';'),
     },

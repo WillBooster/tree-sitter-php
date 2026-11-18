@@ -1,4 +1,4 @@
-// code-gauge-allow-file fileNcss 447 -- Full-parse scanner states share the lexer and immutable heredoc stack.
+// code-gauge-allow-file fileNcss 449 -- Full-parse scanner states share the lexer and immutable heredoc stack.
 #include "tree_sitter/array.h"
 #include "tree_sitter/parser.h"
 
@@ -24,6 +24,7 @@ enum TokenType {
     DIRECTIVE_NAME,
     EXIT_INTERPOLATION_IDENTIFIER,
     LINE_COMMENT_BODY,
+    HASH_COMMENT_BODY,
     SENTINEL_ERROR, // Unused token used to indicate error recovery mode
 };
 
@@ -373,7 +374,7 @@ static bool scan_namespace_use_gap(TSLexer *lexer);
 
 static bool scan_namespace_use_comment(TSLexer *lexer);
 
-static bool scan_comment_tail(TSLexer *lexer);
+static bool scan_comment_tail(TSLexer *lexer, enum TokenType type);
 
 static bool scan_line_comment_body(TSLexer *lexer, bool emit);
 
@@ -383,7 +384,7 @@ static bool scan_directive_name(TSLexer *lexer);
 
 static bool scan_exit_interpolation_identifier(TSLexer *lexer);
 
-// code-gauge-allow functionCognitiveComplexity 18 -- Selects a lexical state before consuming input.
+// code-gauge-allow functionCognitiveComplexity 21 -- Selects a lexical state before consuming input.
 // code-gauge-allow functionNcss 36 -- Dispatches the scanner states in lexical precedence order.
 static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     if (valid_symbols[SENTINEL_ERROR]) {
@@ -397,8 +398,8 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
         return scan_exit_interpolation_identifier(lexer);
     }
 
-    if (valid_symbols[LINE_COMMENT_BODY]) {
-        return scan_comment_tail(lexer);
+    if (valid_symbols[LINE_COMMENT_BODY] || valid_symbols[HASH_COMMENT_BODY]) {
+        return scan_comment_tail(lexer, valid_symbols[HASH_COMMENT_BODY] ? HASH_COMMENT_BODY : LINE_COMMENT_BODY);
     }
 
     if (valid_symbols[DIRECTIVE_NAME]) {
@@ -598,9 +599,12 @@ static bool scan_namespace_use_comment(TSLexer *lexer) {
     return scan_namespace_use_block_comment(lexer);
 }
 
-static bool scan_comment_tail(TSLexer *lexer) {
+static bool scan_comment_tail(TSLexer *lexer, enum TokenType type) {
+    if (type == HASH_COMMENT_BODY && lexer->lookahead == '[') {
+        return false;
+    }
     scan_line_comment_body(lexer, true);
-    lexer->result_symbol = LINE_COMMENT_BODY;
+    lexer->result_symbol = type;
     return true;
 }
 

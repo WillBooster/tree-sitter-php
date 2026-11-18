@@ -88,6 +88,7 @@ test.each(['php', 'php_only'])('%s keeps question marks inside line comments', a
       for (const [body, after] of [
         ['', ''],
         ['?', ''],
+        [' [attribute-looking text]', '\necho 2;'],
         [' two??', ''],
         [' one?', '\r\necho 2;'],
         [' two??', '?>'],
@@ -129,6 +130,24 @@ test('leaves literal text, strings and attributes outside line comments', async 
     expect(tree.rootNode.descendantsOfType('comment').map((node) => node.text)).toEqual(['// comment??']);
   } finally {
     tree.delete();
+    parser.delete();
+  }
+});
+
+test.each(['php', 'php_only'])('%s rejects misplaced attribute openers', async (dialect) => {
+  const language = await Language.load(path.resolve(`tree-sitter-${dialect}.wasm`));
+  const parser = new Parser().setLanguage(language);
+  try {
+    for (const statement of ['$a = 1', 'echo 1']) {
+      const source = `<?php ${statement} #[Attr]\n;`;
+      const tree = parser.parse(source)!;
+      try {
+        expect(tree.rootNode.hasError, source).toBe(true);
+      } finally {
+        tree.delete();
+      }
+    }
+  } finally {
     parser.delete();
   }
 });

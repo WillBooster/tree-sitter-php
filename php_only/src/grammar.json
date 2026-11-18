@@ -11174,11 +11174,24 @@
           "members": [
             {
               "type": "SYMBOL",
-              "name": "_line_comment_start"
+              "name": "_slash_comment_start"
             },
             {
               "type": "SYMBOL",
               "name": "_line_comment_body"
+            }
+          ]
+        },
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_hash_comment_start"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_hash_comment_body"
             }
           ]
         },
@@ -11204,21 +11217,13 @@
         }
       ]
     },
-    "_line_comment_start": {
-      "type": "TOKEN",
-      "content": {
-        "type": "CHOICE",
-        "members": [
-          {
-            "type": "STRING",
-            "value": "//"
-          },
-          {
-            "type": "STRING",
-            "value": "#"
-          }
-        ]
-      }
+    "_slash_comment_start": {
+      "type": "PATTERN",
+      "value": "\\/\\/"
+    },
+    "_hash_comment_start": {
+      "type": "PATTERN",
+      "value": "#"
     },
     "_semicolon": {
       "type": "CHOICE",
@@ -11370,6 +11375,10 @@
     {
       "type": "SYMBOL",
       "name": "_line_comment_body"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_hash_comment_body"
     },
     {
       "type": "SYMBOL",
