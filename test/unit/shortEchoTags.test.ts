@@ -57,3 +57,35 @@ test('short echo reopens PHP after a closing tag and an implicit empty body', as
     parser.delete();
   }
 });
+
+test('closing tags complete PHP statements at their source boundary', async () => {
+  const parser = new Parser().setLanguage(await Language.load(path.resolve('tree-sitter-php.wasm')));
+  try {
+    for (const [source, hasError] of [
+      ['<?= ?><?php 1, 2;', true],
+      ['<?= 1, ?><?php 2;', true],
+      ['<?php echo 1, ?><?php 2;', true],
+      ['<?php if (true) ?>hello<?php else echo 1;', true],
+      ['<?php if (true) ?> <?php elseif (false) echo 1;', true],
+      ['<?php if (true) {} ?><?php else echo 1;', true],
+      ['<?php do ?>hello<?php while (false);', true],
+      ['<?php if (true) ?>\n<?php else echo 1;', false],
+      ['<?php if (true) echo 2 ?>\r\n<?php else echo 1;', false],
+      ['<?php do ?><?php while (false);', false],
+      ['<?php if (true): ?>hello<?php else: ?>world<?php endif;', false],
+      ['<?php switch (1) { ?><?php case 1: break; }', false],
+      ['<?php switch (1): ?><?php case 1: break; endswitch;', false],
+      ['<?php switch (1) { ?><?php ; case 1: break; }', true],
+      ['<?php switch (1): ?><?php ; case 1: break; endswitch;', true],
+    ] as const) {
+      const tree = parser.parse(source)!;
+      try {
+        expect(tree.rootNode.hasError, source).toBe(hasError);
+      } finally {
+        tree.delete();
+      }
+    }
+  } finally {
+    parser.delete();
+  }
+});

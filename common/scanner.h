@@ -1,4 +1,4 @@
-// code-gauge-allow-file fileNcss 474 -- Full-parse scanner states share the lexer and immutable heredoc stack.
+// code-gauge-allow-file fileNcss 511 -- Full-parse scanner states share the lexer and immutable heredoc stack.
 #include "tree_sitter/array.h"
 #include "tree_sitter/parser.h"
 
@@ -27,6 +27,8 @@ enum TokenType {
     HASH_COMMENT_BODY,
     PHP_ECHO_TAG,
     SHORT_ECHO_KEYWORD,
+    ADJACENT_PHP_BLOCKS,
+    READONLY_CALL_NAME,
     SENTINEL_ERROR, // Unused token used to indicate error recovery mode
 };
 
@@ -375,19 +377,25 @@ static bool scan_namespace_use_prefix(TSLexer *lexer);
 
 static bool scan_namespace_use_separator(TSLexer *lexer);
 
-static bool scan_namespace_use_gap(TSLexer *lexer);
+static bool scan_php_gap(TSLexer *lexer);
 
-static bool scan_namespace_use_comment(TSLexer *lexer);
+static bool scan_php_gap_comment(TSLexer *lexer);
 
 static bool scan_comment_tail(TSLexer *lexer, enum TokenType type);
 
 static bool scan_line_comment_body(TSLexer *lexer, bool emit);
 
-static bool scan_namespace_use_block_comment(TSLexer *lexer);
+static bool scan_block_comment(TSLexer *lexer);
 
 static bool scan_directive_name(TSLexer *lexer);
 
 static bool scan_php_echo_tag(Scanner *scanner, TSLexer *lexer);
+
+static bool scan_close_semicolon(TSLexer *lexer, const bool *valid_symbols);
+
+static bool scan_adjacent_php_blocks(TSLexer *lexer);
+
+static bool scan_readonly_call_name(TSLexer *lexer);
 
 static bool scan_exit_interpolation_identifier(TSLexer *lexer);
 
@@ -465,12 +473,40 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
         return scan_heredoc_start(scanner, lexer);
     }
 
-    if (!valid_symbols[AUTOMATIC_SEMICOLON] || lexer->lookahead != '?') {
+    return scan_close_semicolon(lexer, valid_symbols);
+}
+
+static bool scan_close_semicolon(TSLexer *lexer, const bool *valid_symbols) {
+    if ((!valid_symbols[AUTOMATIC_SEMICOLON] && !valid_symbols[ADJACENT_PHP_BLOCKS]) || lexer->lookahead != '?') {
         return false;
     }
-    lexer->result_symbol = AUTOMATIC_SEMICOLON;
     advance(lexer);
-    return lexer->lookahead == '>';
+    if (lexer->lookahead != '>') {
+        return false;
+    }
+    if (valid_symbols[ADJACENT_PHP_BLOCKS] && scan_adjacent_php_blocks(lexer)) {
+        lexer->mark_end(lexer);
+        lexer->result_symbol = ADJACENT_PHP_BLOCKS;
+        return true;
+    }
+    lexer->result_symbol = AUTOMATIC_SEMICOLON;
+    return valid_symbols[AUTOMATIC_SEMICOLON];
+}
+
+static bool scan_adjacent_php_blocks(TSLexer *lexer) {
+    advance(lexer);
+    if (lexer->lookahead == '\r') {
+        advance(lexer);
+        if (lexer->lookahead == '\n') advance(lexer);
+    } else if (lexer->lookahead == '\n') {
+        advance(lexer);
+    }
+    const char tag[] = "<?php";
+    for (const char *character = tag; *character; character++) {
+        if (ascii_tolower(lexer->lookahead) != *character) return false;
+        advance(lexer);
+    }
+    return lexer->eof(lexer) || is_php_whitespace(lexer->lookahead);
 }
 
 static bool scan_php_echo_tag(Scanner *scanner, TSLexer *lexer) {
@@ -544,8 +580,9 @@ static bool scan_heredoc_start(Scanner *scanner, TSLexer *lexer) {
     return true;
 }
 
+// code-gauge-allow functionCognitiveComplexity 19 -- Keeps overlapping identifier prefixes in scanner precedence order.
 static PrefixScanResult scan_name_prefix(TSLexer *lexer, const bool *valid_symbols) {
-    if (valid_symbols[NAMESPACE_USE_SEPARATOR] || valid_symbols[NAMESPACE_USE_PREFIX]) {
+    if (valid_symbols[NAMESPACE_USE_SEPARATOR] || valid_symbols[NAMESPACE_USE_PREFIX] || valid_symbols[READONLY_CALL_NAME]) {
         while (is_php_whitespace(lexer->lookahead)) {
             skip(lexer);
         }
@@ -556,6 +593,9 @@ static PrefixScanResult scan_name_prefix(TSLexer *lexer, const bool *valid_symbo
     if (valid_symbols[NAMESPACE_USE_PREFIX] && is_valid_name_start(lexer)) {
         return scan_namespace_use_prefix(lexer) ? PrefixAccepted : PrefixRejected;
     }
+    if (valid_symbols[READONLY_CALL_NAME] && ascii_tolower(lexer->lookahead) == 'r') {
+        return scan_readonly_call_name(lexer) ? PrefixAccepted : PrefixRejected;
+    }
     if (!valid_symbols[QUALIFIED_KEYWORD]) {
         return NoPrefix;
     }
@@ -564,6 +604,17 @@ static PrefixScanResult scan_name_prefix(TSLexer *lexer, const bool *valid_symbo
         return NoPrefix;
     }
     return scan_qualified_keyword(lexer, keyword) ? PrefixAccepted : PrefixRejected;
+}
+
+static bool scan_readonly_call_name(TSLexer *lexer) {
+    const char name[] = "readonly";
+    for (const char *character = name; *character; character++) {
+        if (ascii_tolower(lexer->lookahead) != *character) return false;
+        advance(lexer);
+    }
+    lexer->mark_end(lexer);
+    lexer->result_symbol = READONLY_CALL_NAME;
+    return scan_php_gap(lexer) && lexer->lookahead == '(';
 }
 
 static bool scan_namespace_use_prefix(TSLexer *lexer) {
@@ -598,14 +649,14 @@ static bool scan_namespace_use_separator(TSLexer *lexer) {
     while (is_valid_name_char(lexer)) {
         advance(lexer);
     }
-    if (!scan_namespace_use_gap(lexer) || lexer->lookahead != '\\') {
+    if (!scan_php_gap(lexer) || lexer->lookahead != '\\') {
         return false;
     }
     lexer->result_symbol = NAMESPACE_USE_SEPARATOR;
     return true;
 }
 
-static bool scan_namespace_use_gap(TSLexer *lexer) {
+static bool scan_php_gap(TSLexer *lexer) {
     for (;;) {
         while (is_php_whitespace(lexer->lookahead)) {
             advance(lexer);
@@ -613,13 +664,13 @@ static bool scan_namespace_use_gap(TSLexer *lexer) {
         if (lexer->lookahead != '/' && lexer->lookahead != '#') {
             return true;
         }
-        if (!scan_namespace_use_comment(lexer)) {
+        if (!scan_php_gap_comment(lexer)) {
             return false;
         }
     }
 }
 
-static bool scan_namespace_use_comment(TSLexer *lexer) {
+static bool scan_php_gap_comment(TSLexer *lexer) {
     if (lexer->lookahead == '#') {
         advance(lexer);
         return scan_line_comment_body(lexer, false);
@@ -633,7 +684,7 @@ static bool scan_namespace_use_comment(TSLexer *lexer) {
         return false;
     }
     advance(lexer);
-    return scan_namespace_use_block_comment(lexer);
+    return scan_block_comment(lexer);
 }
 
 static bool scan_comment_tail(TSLexer *lexer, enum TokenType type) {
@@ -662,7 +713,7 @@ static bool scan_line_comment_body(TSLexer *lexer, bool emit) {
     return true;
 }
 
-static bool scan_namespace_use_block_comment(TSLexer *lexer) {
+static bool scan_block_comment(TSLexer *lexer) {
     while (lexer->lookahead != 0) {
         if (lexer->lookahead == '*') {
             advance(lexer);

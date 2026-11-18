@@ -49,7 +49,12 @@ test.each(['php', 'php_only'])('%s accepts switch, match, and readonly function 
     readonly class Immutable {}
     switch (1) { ; }
     switch (1): ; case 1: break; endswitch;
-    echo match (1) { default, => ReAdOnLy(), };
+    echo match (1) { default, => ReAdOnLy /* gap */ (), };
+    foo(readonly: 1);
+    new Foo(readonly: true);
+    #[Attr(readonly: true)] class B {}
+    $x = readonly\\foo();
+    const X = readonly\\Y;
   `;
   try {
     const tree = parser.parse(source)!;
@@ -61,7 +66,7 @@ test.each(['php', 'php_only'])('%s accepts switch, match, and readonly function 
       expect(tree.rootNode.descendantsOfType('switch_statement')).toHaveLength(2);
       expect(
         tree.rootNode.descendantsOfType('match_default_expression')[0]?.childForFieldName('return_expression')?.text
-      ).toBe('ReAdOnLy()');
+      ).toBe('ReAdOnLy /* gap */ ()');
     } finally {
       tree.delete();
     }

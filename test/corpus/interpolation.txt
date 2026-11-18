@@ -218,8 +218,8 @@ if ($post) :
         condition: (parenthesized_expression (variable_name (name)))
         body: (compound_statement (expression_statement (variable_name (name))))
       )
+      (text_interpolation (php_end_tag) (php_tag))
     )
-    (text_interpolation (php_end_tag) (php_tag))
     alternative: (else_clause
       body: (colon_block
         (expression_statement (variable_name (name)))

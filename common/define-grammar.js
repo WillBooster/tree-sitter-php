@@ -129,21 +129,12 @@ module.exports = function defineGrammar(dialect) {
       $._hash_comment_body,
       $._php_echo_tag,
       $._short_echo_keyword,
+      $._adjacent_php_blocks,
+      $._readonly_call_name,
       $.sentinel_error, // Unused token used to indicate error recovery mode
     ],
 
-    extras: $ => {
-      const extras = [
-        $.comment,
-        /[ \t\n\r]/,
-      ];
-
-      if (dialect === 'php') {
-        extras.push($.text_interpolation);
-      }
-
-      return extras;
-    },
+    extras: $ => [$.comment, /[ \t\n\r]/],
 
     inline: $ => [
       $._identifier,
@@ -179,14 +170,14 @@ module.exports = function defineGrammar(dialect) {
             optional($.text),
             optional(seq(
               $._php_start,
-              repeat($.statement),
+              repeat($._statement_list_item),
             )),
           );
         }
 
         return seq(
           optional($._php_start),
-          repeat($.statement),
+          repeat($._statement_list_item),
           optional($.php_end_tag),
         );
       },
@@ -238,9 +229,11 @@ module.exports = function defineGrammar(dialect) {
         $.function_static_declaration,
       ),
 
+      _statement_list_item: $ => dialect === 'php' ? choice($.statement, $.text_interpolation) : $.statement,
+
       empty_statement: _ => prec(-1, ';'),
 
-      _required_statement: $ => choice($.statement, alias($._automatic_semicolon, $.empty_statement)),
+      _required_statement: $ => choice($.statement, alias($._closing_semicolon, $.empty_statement)),
 
       reference_modifier: _ => '&',
 
@@ -793,7 +786,7 @@ module.exports = function defineGrammar(dialect) {
           $._semicolon,
           seq(
             ':',
-            repeat($.statement),
+            repeat($._statement_list_item),
             keyword('enddeclare'),
             $._semicolon,
           ),
@@ -916,7 +909,7 @@ module.exports = function defineGrammar(dialect) {
           field('body', $.statement),
           seq(
             ':',
-            field('body', repeat($.statement)),
+            field('body', repeat($._statement_list_item)),
             keyword('endfor'),
             $._semicolon,
           ),
@@ -982,7 +975,7 @@ module.exports = function defineGrammar(dialect) {
 
       colon_block: $ => seq(
         ':',
-        repeat($.statement),
+        repeat($._statement_list_item),
       ),
 
       else_if_clause: $ => seq(
@@ -1051,13 +1044,13 @@ module.exports = function defineGrammar(dialect) {
       switch_block: $ => choice(
         seq(
           '{',
-          optional(';'),
+          optional($._semicolon),
           repeat(choice($.case_statement, $.default_statement)),
           '}',
         ),
         seq(
           ':',
-          optional(';'),
+          optional($._semicolon),
           repeat(choice($.case_statement, $.default_statement)),
           keyword('endswitch'),
           $._semicolon,
@@ -1067,17 +1060,17 @@ module.exports = function defineGrammar(dialect) {
       case_statement: $ => seq(
         keyword('case'),
         field('value', $.expression),
-        choice(':', ';'),
-        repeat($.statement),
+        choice(':', $._semicolon),
+        repeat($._statement_list_item),
       ),
 
       default_statement: $ => seq(
         keyword('default'),
-        choice(':', ';'),
-        repeat($.statement),
+        choice(':', $._semicolon),
+        repeat($._statement_list_item),
       ),
 
-      compound_statement: $ => seq('{', repeat($.statement), '}'),
+      compound_statement: $ => seq('{', repeat($._statement_list_item), '}'),
 
       named_label_statement: $ => seq($._identifier, ':'),
 
@@ -1382,7 +1375,7 @@ module.exports = function defineGrammar(dialect) {
       )),
 
       function_call_expression: $ => prec(PREC.CALL, seq(
-        field('function', choice($._name, alias(keyword('readonly', false), $.name), $._callable_expression)),
+        field('function', choice($._name, alias($._readonly_call_name, $.name), $._callable_expression)),
         field('arguments', $.arguments),
       )),
 
@@ -1816,7 +1809,11 @@ module.exports = function defineGrammar(dialect) {
 
       _hash_comment_start: _ => /#/,
 
-      _semicolon: $ => choice($._automatic_semicolon, ';'),
+      _semicolon: $ => choice($._closing_semicolon, ';'),
+
+      _closing_semicolon: $ => dialect === 'php'
+        ? choice($._automatic_semicolon, $._adjacent_php_blocks)
+        : $._automatic_semicolon,
     },
   });
 };
