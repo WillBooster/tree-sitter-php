@@ -3567,6 +3567,14 @@
                   "type": "SYMBOL",
                   "name": "readonly_modifier"
                 }
+              },
+              {
+                "type": "FIELD",
+                "name": "final",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "final_modifier"
+                }
               }
             ]
           }
