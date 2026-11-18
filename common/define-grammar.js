@@ -67,6 +67,7 @@ const BASE_RESERVED_KEYWORDS = [
 const BASE_RESERVED_KEYWORD_SET = BASE_RESERVED_KEYWORDS.map(word => keyword(word, false));
 
 const IDENTIFIER_TYPE_KEYWORDS = ['bool', 'float', 'int', 'object', 'string'].map(word => keyword(word, false));
+const EXPRESSION_INTRINSICS = ['empty', 'eval', 'isset'].map(word => keyword(word, false));
 
 /**
  * @see https://www.php.net/manual/en/reserved.other-reserved-words.php
@@ -120,7 +121,7 @@ module.exports = function defineGrammar(dialect) {
       $.heredoc_end,
       $.nowdoc_string,
       $._heredoc_line_start,
-      $._qualified_keyword,
+      $._qualified_name_prefix,
       $._namespace_use_prefix,
       $._namespace_use_separator,
       $._directive_name,
@@ -150,7 +151,7 @@ module.exports = function defineGrammar(dialect) {
         ...OTHER_RESERVED_KEYWORD_SET,
       ],
       nothing: _ => [],
-      operand_keywords: _ => [keyword('list', false), keyword('default', false)],
+      operand_keywords: _ => [...BASE_RESERVED_KEYWORD_SET, ...EXPRESSION_INTRINSICS],
     },
 
     supertypes: $ => [
@@ -346,7 +347,7 @@ module.exports = function defineGrammar(dialect) {
       namespace_name: $ => seq(
         choice(
           $._unreserved_identifier,
-          alias($._qualified_keyword, $.name),
+          alias($._qualified_name_prefix, $.name),
         ),
         repeat(seq('\\', $._unreserved_identifier)),
       ),
@@ -1141,6 +1142,7 @@ module.exports = function defineGrammar(dialect) {
         alias(choice(...IDENTIFIER_TYPE_KEYWORDS), $.name),
         $.array_creation_expression,
         $.print_intrinsic,
+        alias($._intrinsic_call, $.function_call_expression),
         $.exit_expression,
         alias($._exit_call, $.function_call_expression),
         $.anonymous_function,
@@ -1227,7 +1229,7 @@ module.exports = function defineGrammar(dialect) {
       )),
 
       _cast_exponential_expression: $ => prec.right(PREC.EXPONENTIAL, seq(
-        field('left', choice($._unary_expression, $.match_expression)),
+        field('left', choice($._unary_expression, $.match_expression, $.reference_assignment_expression)),
         field('operator', '**'),
         field('right', $.expression),
       )),
@@ -1372,6 +1374,11 @@ module.exports = function defineGrammar(dialect) {
         field('arguments', $.arguments),
       )),
 
+      _intrinsic_call: $ => prec(PREC.CALL, seq(
+        field('function', alias(choice(...EXPRESSION_INTRINSICS), $.name)),
+        field('arguments', $.arguments),
+      )),
+
       function_call_expression: $ => prec(PREC.CALL, seq(
         field('function', choice(
           reserved('operand_keywords', $.name),
@@ -1439,16 +1446,9 @@ module.exports = function defineGrammar(dialect) {
         field('name', alias(
           choice(
             $._unreserved_identifier,
-            keyword('array', false),
-            keyword('default', false),
-            keyword('fn', false),
-            keyword('function', false),
-            keyword('list', false),
-            keyword('match', false),
-            keyword('namespace', false),
+            ...BASE_RESERVED_KEYWORDS.filter(word => word !== 'yield from').map(word => keyword(word, false)),
+            ...EXPRESSION_INTRINSICS,
             keyword('null', false),
-            keyword('static', false),
-            keyword('throw', false),
             keyword('parent', false),
             keyword('self', false),
             /true|false/i,

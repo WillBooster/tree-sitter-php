@@ -82,11 +82,17 @@ test.each(['php', 'php_only'])('%s preserves operand expressions and rejects a l
       ['(int)$x = 1', 'cast_expression', 'value', 'assignment_expression'],
       ['(int)$x += 1', 'cast_expression', 'value', 'augmented_assignment_expression'],
       ['(int)$x =& $y', 'cast_expression', 'value', 'reference_assignment_expression'],
+      ['(string)$x =& $y ** 2', 'cast_expression', 'value', 'binary_expression'],
+      ['(bool)(string)$x =& $y ** 2', 'cast_expression', 'value', 'cast_expression'],
       ['clone $x = $y', 'clone_expression', undefined, 'assignment_expression'],
       ['clone $x =& referencedValue()', 'clone_expression', undefined, 'reference_assignment_expression'],
       ['clone $x =& $reader->list(default: 1)', 'clone_expression', undefined, 'reference_assignment_expression'],
       ['(int)$x =& reader(list: 1)', 'cast_expression', 'value', 'reference_assignment_expression'],
       [String.raw`(int)$x =& list\value()`, 'cast_expression', 'value', 'reference_assignment_expression'],
+      [String.raw`(int)$x =& match\value()`, 'cast_expression', 'value', 'reference_assignment_expression'],
+      [String.raw`(int)$x =& namespace\value()`, 'cast_expression', 'value', 'reference_assignment_expression'],
+      [String.raw`(int)$x =& new\Library\read()`, 'cast_expression', 'value', 'reference_assignment_expression'],
+      [String.raw`$x =& new\Library\read()`, 'reference_assignment_expression', undefined, 'variable_name'],
       ['C::{"VALUE"}', 'class_constant_access_expression', 'name_expression', 'encapsed_string'],
       ['C::{getName() . $tail}', 'class_constant_access_expression', 'name_expression', 'binary_expression'],
     ] as const) {
@@ -115,7 +121,17 @@ test.each(['php', 'php_only'])('%s preserves operand expressions and rejects a l
         tree.delete();
       }
     }
-    for (const source of ['clone $x =& 1', '$x =& new C()', '(int)$x =& ($y)', '[$x] =& $y', '$x =& LiSt($y)']) {
+    for (const source of [
+      'clone $x =& 1',
+      '$x =& new C()',
+      '(int)$x =& ($y)',
+      '[$x] =& $y',
+      '$x =& LiSt($y)',
+      '$x =& fn()',
+      '$x =& match()',
+      '$x =& array()',
+      '$x =& isset($y)',
+    ]) {
       const tree = parser.parse(`<?php ${source};`)!;
       try {
         expect(tree.rootNode.hasError, source).toBe(true);
