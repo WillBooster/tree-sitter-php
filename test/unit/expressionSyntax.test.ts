@@ -86,6 +86,8 @@ test.each(['php', 'php_only'])('%s preserves operand expressions and rejects a l
       ['(bool)(string)$x =& $y ** 2', 'cast_expression', 'value', 'cast_expression'],
       ['clone $x = $y', 'clone_expression', undefined, 'assignment_expression'],
       ['clone $x =& referencedValue()', 'clone_expression', undefined, 'reference_assignment_expression'],
+      ['clone $x =& static::read()', 'clone_expression', undefined, 'reference_assignment_expression'],
+      ['clone new static()', 'clone_expression', undefined, 'object_creation_expression'],
       ['clone $x =& $reader->list(default: 1)', 'clone_expression', undefined, 'reference_assignment_expression'],
       ['(int)$x =& reader(list: 1)', 'cast_expression', 'value', 'reference_assignment_expression'],
       [String.raw`(int)$x =& list\value()`, 'cast_expression', 'value', 'reference_assignment_expression'],
@@ -124,6 +126,9 @@ test.each(['php', 'php_only'])('%s preserves operand expressions and rejects a l
     for (const source of [
       'clone $x =& 1',
       '$x =& new C()',
+      'clone $x =& static()',
+      'clone $x =& StAtIc /* gap */ ()',
+      '(int)clone $x =& static()',
       '(int)$x =& ($y)',
       '[$x] =& $y',
       '$x =& LiSt($y)',

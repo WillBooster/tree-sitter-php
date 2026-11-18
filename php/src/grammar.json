@@ -8209,16 +8209,6 @@
                 {
                   "type": "ALIAS",
                   "content": {
-                    "type": "PATTERN",
-                    "value": "static",
-                    "flags": "i"
-                  },
-                  "named": true,
-                  "value": "name"
-                },
-                {
-                  "type": "ALIAS",
-                  "content": {
                     "type": "CHOICE",
                     "members": [
                       {

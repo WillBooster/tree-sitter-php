@@ -1382,7 +1382,6 @@ module.exports = function defineGrammar(dialect) {
       function_call_expression: $ => prec(PREC.CALL, seq(
         field('function', choice(
           reserved('operand_keywords', $.name),
-          alias(keyword('static', false), $.name),
           alias(choice(...IDENTIFIER_TYPE_KEYWORDS), $.name),
           $.qualified_name,
           $.relative_name,
