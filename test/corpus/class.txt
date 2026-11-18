@@ -1226,3 +1226,57 @@ class ReadonlyValues {
             type: (primitive_type)
             name: (variable_name (name))))
         body: (compound_statement)))))
+
+=========================================
+Final promoted constructor parameters
+=========================================
+
+<?php
+class FinalValues {
+    function __construct(
+        final $plain,
+        final public int $before = 1,
+        protected final int $after = 2,
+        readonly final int $readOnly = 3,
+        final private(set) int $restricted = 4,
+    ) {}
+}
+
+---
+
+(program
+  (php_tag)
+  (class_declaration
+    name: (name)
+    body: (declaration_list
+      (method_declaration
+        name: (name)
+        parameters: (formal_parameters
+          (property_promotion_parameter
+            final: (final_modifier)
+            name: (variable_name (name)))
+          (property_promotion_parameter
+            final: (final_modifier)
+            visibility: (visibility_modifier)
+            type: (primitive_type)
+            name: (variable_name (name))
+            default_value: (integer))
+          (property_promotion_parameter
+            visibility: (visibility_modifier)
+            final: (final_modifier)
+            type: (primitive_type)
+            name: (variable_name (name))
+            default_value: (integer))
+          (property_promotion_parameter
+            readonly: (readonly_modifier)
+            final: (final_modifier)
+            type: (primitive_type)
+            name: (variable_name (name))
+            default_value: (integer))
+          (property_promotion_parameter
+            final: (final_modifier)
+            visibility: (visibility_modifier (operation))
+            type: (primitive_type)
+            name: (variable_name (name))
+            default_value: (integer)))
+        body: (compound_statement)))))

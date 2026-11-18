@@ -4204,6 +4204,16 @@
           }
         ]
       },
+      "final": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "final_modifier",
+            "named": true
+          }
+        ]
+      },
       "name": {
         "multiple": false,
         "required": true,
