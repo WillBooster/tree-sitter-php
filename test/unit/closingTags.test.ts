@@ -16,7 +16,15 @@ test.each(['php', 'php_only'])('%s terminates optional expressions before closin
   const parser = new Parser().setLanguage(language);
   try {
     for (const [body, type, statement] of Statements) {
-      for (const trivia of [' ', '\r\n', ' // trailing\n', ' /* trailing */ ', ' # trailing\n']) {
+      for (const trivia of [
+        ' ',
+        '\r\n',
+        ' // trailing\n',
+        ' /* trailing */ ',
+        ' # trailing\n',
+        ' // trailing??',
+        ' # trailing??',
+      ]) {
         const source = `<?php ${body}${trivia}?>`;
         const tree = parser.parse(source)!;
         try {
@@ -68,6 +76,78 @@ test('keeps statements in their PHP blocks after implicit semicolons', async () 
     expect(tree.rootNode.descendantsOfType('comment').map((node) => node.text)).toEqual(['// trailing']);
   } finally {
     tree.delete();
+    parser.delete();
+  }
+});
+
+test.each(['php', 'php_only'])('%s keeps question marks inside line comments', async (dialect) => {
+  const language = await Language.load(path.resolve(`tree-sitter-${dialect}.wasm`));
+  const parser = new Parser().setLanguage(language);
+  try {
+    for (const marker of ['//', '#']) {
+      for (const [body, after] of [
+        ['', ''],
+        ['?', ''],
+        [' [attribute-looking text]', '\necho 2;'],
+        [' two??', ''],
+        [' one?', '\r\necho 2;'],
+        [' two??', '?>'],
+        ['', '?>'],
+      ]) {
+        const comment = marker + body;
+        const source = `<?php echo 1; ${comment}${after}`;
+        const tree = parser.parse(source)!;
+        try {
+          expect(tree.rootNode.hasError, source).toBe(false);
+          expect(
+            tree.rootNode.descendantsOfType('comment').map((node) => [node.text, node.childCount]),
+            source
+          ).toEqual([[comment, 0]]);
+          expect(
+            tree.rootNode.descendantsOfType('php_end_tag').map((node) => node.text),
+            source
+          ).toEqual(after === '?>' ? ['?>'] : []);
+        } finally {
+          tree.delete();
+        }
+      }
+    }
+  } finally {
+    parser.delete();
+  }
+});
+
+test('leaves literal text, strings and attributes outside line comments', async () => {
+  const language = await Language.load(path.resolve('tree-sitter-php.wasm'));
+  const parser = new Parser().setLanguage(language);
+  const source = '// before\n<?php #[Attr] function f() { return "// #?"; } // comment???># after';
+  const tree = parser.parse(source)!;
+  try {
+    expect(tree.rootNode.hasError).toBe(false);
+    expect(tree.rootNode.descendantsOfType('text').map((node) => node.text)).toEqual(['// before\n', '# after']);
+    expect(tree.rootNode.descendantsOfType('attribute').map((node) => node.text)).toEqual(['Attr']);
+    expect(tree.rootNode.descendantsOfType('encapsed_string').map((node) => node.text)).toEqual(['"// #?"']);
+    expect(tree.rootNode.descendantsOfType('comment').map((node) => node.text)).toEqual(['// comment??']);
+  } finally {
+    tree.delete();
+    parser.delete();
+  }
+});
+
+test.each(['php', 'php_only'])('%s rejects misplaced attribute openers', async (dialect) => {
+  const language = await Language.load(path.resolve(`tree-sitter-${dialect}.wasm`));
+  const parser = new Parser().setLanguage(language);
+  try {
+    for (const statement of ['$a = 1', 'echo 1']) {
+      const source = `<?php ${statement} #[Attr]\n;`;
+      const tree = parser.parse(source)!;
+      try {
+        expect(tree.rootNode.hasError, source).toBe(true);
+      } finally {
+        tree.delete();
+      }
+    }
+  } finally {
     parser.delete();
   }
 });
