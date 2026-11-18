@@ -104,6 +104,7 @@ module.exports = function defineGrammar(dialect) {
       [$.if_statement],
 
       [$.namespace_name],
+      [$._following_namespace_name],
       [$._class_const_namespace_name],
       [$.heredoc_body],
       [$.parenthesized_expression, $.argument],
@@ -133,6 +134,8 @@ module.exports = function defineGrammar(dialect) {
       $._short_echo_keyword,
       $._adjacent_php_blocks,
       $._readonly_call_name,
+      $._plus_sign,
+      $._minus_sign,
       $.sentinel_error, // Unused token used to indicate error recovery mode
     ],
 
@@ -307,17 +310,30 @@ module.exports = function defineGrammar(dialect) {
       ),
 
       qualified_name: $ => seq(
-        field('prefix', seq(optional('\\'), optional($.namespace_name), '\\')),
-        $._unreserved_identifier,
+        field('prefix', choice(
+          '\\',
+          seq($.namespace_name, $._qualified_separator),
+          seq('\\', alias($._following_namespace_name, $.namespace_name), $._qualified_separator),
+        )),
+        $._qualified_part,
       ),
 
       relative_name: $ => seq(
         field('prefix', seq(
           keyword('namespace'),
-          optional(seq('\\', $.namespace_name)),
-          '\\',
+          $._qualified_separator,
+          optional(seq(alias($._following_namespace_name, $.namespace_name), $._qualified_separator)),
         )),
-        $._unreserved_identifier,
+        $._qualified_part,
+      ),
+
+      _qualified_separator: _ => alias(token.immediate('\\'), '\\'),
+
+      _qualified_part: $ => alias(token.immediate(NAME_PATTERN), $.name),
+
+      _following_namespace_name: $ => seq(
+        $._qualified_part,
+        repeat(seq($._qualified_separator, $._qualified_part)),
       ),
 
       _name: $ => choice(
@@ -350,7 +366,7 @@ module.exports = function defineGrammar(dialect) {
           $._unreserved_identifier,
           alias($._qualified_name_prefix, $.name),
         ),
-        repeat(seq('\\', $._unreserved_identifier)),
+        repeat(seq($._qualified_separator, $._qualified_part)),
       ),
 
       _namespace_use_group: $ => seq(
@@ -1111,7 +1127,7 @@ module.exports = function defineGrammar(dialect) {
           field('argument', $.expression),
         )),
         prec.left(PREC.NEG, seq(
-          field('operator', choice('+', '-', '~')),
+          field('operator', choice(alias($._plus_sign, '+'), alias($._minus_sign, '-'), '~')),
           field('argument', $.expression),
         )),
       ),
@@ -1795,8 +1811,8 @@ module.exports = function defineGrammar(dialect) {
           ['.', PREC.CONCAT],
           ['<<', PREC.SHIFT],
           ['>>', PREC.SHIFT],
-          ['+', PREC.PLUS],
-          ['-', PREC.PLUS],
+          [alias($._plus_sign, '+'), PREC.PLUS],
+          [alias($._minus_sign, '-'), PREC.PLUS],
           ['*', PREC.TIMES],
           ['/', PREC.TIMES],
           ['%', PREC.TIMES],

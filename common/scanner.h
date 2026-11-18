@@ -29,6 +29,8 @@ enum TokenType {
     SHORT_ECHO_KEYWORD,
     ADJACENT_PHP_BLOCKS,
     READONLY_CALL_NAME,
+    PLUS_SIGN,
+    MINUS_SIGN,
     SENTINEL_ERROR, // Unused token used to indicate error recovery mode
 };
 
@@ -368,9 +370,10 @@ static bool scan_heredoc_end(Scanner *scanner, TSLexer *lexer);
 
 static bool scan_heredoc_start(Scanner *scanner, TSLexer *lexer);
 
-static PrefixScanResult scan_name_prefix(TSLexer *lexer, const bool *valid_symbols);
+static PrefixScanResult scan_operand_prefix(TSLexer *lexer, const bool *valid_symbols);
 
 static PrefixScanResult scan_expression_name(TSLexer *lexer, bool qualified, bool readonly);
+static bool scan_sign(TSLexer *lexer, enum TokenType symbol);
 
 static bool scan_namespace_use_prefix(TSLexer *lexer);
 
@@ -453,7 +456,7 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
         return scan_heredoc_end(scanner, lexer);
     }
 
-    PrefixScanResult prefix = scan_name_prefix(lexer, valid_symbols);
+    PrefixScanResult prefix = scan_operand_prefix(lexer, valid_symbols);
     if (prefix != NoPrefix) {
         return prefix == PrefixAccepted;
     }
@@ -583,10 +586,12 @@ static bool scan_heredoc_start(Scanner *scanner, TSLexer *lexer) {
     return true;
 }
 
-static PrefixScanResult scan_name_prefix(TSLexer *lexer, const bool *valid_symbols) {
+// code-gauge-allow functionCognitiveComplexity 23 -- Checks overlapping namespace and operator tokens before scanning an ordinary expression name.
+static PrefixScanResult scan_operand_prefix(TSLexer *lexer, const bool *valid_symbols) {
     bool qualified = valid_symbols[QUALIFIED_NAME_PREFIX];
     bool readonly = valid_symbols[READONLY_CALL_NAME];
-    if (valid_symbols[NAMESPACE_USE_SEPARATOR] || valid_symbols[NAMESPACE_USE_PREFIX] || qualified || readonly) {
+    if (valid_symbols[NAMESPACE_USE_SEPARATOR] || valid_symbols[NAMESPACE_USE_PREFIX] || qualified || readonly ||
+        valid_symbols[PLUS_SIGN] || valid_symbols[MINUS_SIGN]) {
         while (is_php_whitespace(lexer->lookahead)) {
             skip(lexer);
         }
@@ -597,10 +602,29 @@ static PrefixScanResult scan_name_prefix(TSLexer *lexer, const bool *valid_symbo
     if (valid_symbols[NAMESPACE_USE_PREFIX] && is_valid_name_start(lexer)) {
         return scan_namespace_use_prefix(lexer) ? PrefixAccepted : PrefixRejected;
     }
+    if (valid_symbols[PLUS_SIGN] && lexer->lookahead == '+') {
+        return scan_sign(lexer, PLUS_SIGN) ? PrefixAccepted : PrefixRejected;
+    }
+    if (valid_symbols[MINUS_SIGN] && lexer->lookahead == '-') {
+        return scan_sign(lexer, MINUS_SIGN) ? PrefixAccepted : PrefixRejected;
+    }
     if ((!qualified && !readonly) || !is_valid_name_start(lexer)) return NoPrefix;
     return scan_expression_name(lexer, qualified, readonly);
 }
 
+static bool scan_sign(TSLexer *lexer, enum TokenType symbol) {
+    int32_t sign = lexer->lookahead;
+    advance(lexer);
+    if (lexer->lookahead == sign || lexer->lookahead == '=' ||
+        (sign == '-' && lexer->lookahead == '>')) {
+        return false;
+    }
+    lexer->mark_end(lexer);
+    lexer->result_symbol = symbol;
+    return true;
+}
+
+// code-gauge-allow functionCognitiveComplexity 16 -- Scans a complete identifier before accepting a qualified or contextual keyword token.
 static PrefixScanResult scan_expression_name(TSLexer *lexer, bool qualified, bool readonly) {
     const char *readonly_suffix = "readonly";
     const char *namespace_suffix = "namespace";
@@ -615,6 +639,8 @@ static PrefixScanResult scan_expression_name(TSLexer *lexer, bool qualified, boo
     } while (is_valid_name_char(lexer));
     lexer->mark_end(lexer);
     if (qualified && !(relative && !*namespace_suffix) && lexer->lookahead == '\\') {
+        advance(lexer);
+        if (!is_valid_name_start(lexer)) return PrefixRejected;
         lexer->result_symbol = QUALIFIED_NAME_PREFIX;
         return PrefixAccepted;
     }

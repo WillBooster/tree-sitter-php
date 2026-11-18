@@ -127,6 +127,9 @@ test.each(['php', 'php_only'])('%s preserves operand expressions and rejects a l
       'clone $x =& 1',
       '$x =& new C()',
       'clone $x =& static()',
+      'clone $x =& $y++ + 2',
+      'clone $x =& $y-- - 2',
+      '(int)$x =& $y++ + 2',
       'clone $x =& StAtIc /* gap */ ()',
       '(int)clone $x =& static()',
       '(int)$x =& ($y)',
@@ -208,6 +211,38 @@ test.each(['php', 'php_only'])('%s retains intrinsic operands and ordinary named
           args?.namedChildren.map((arg) => arg.type),
           source
         ).toEqual(Array.from({ length: count }, () => 'argument'));
+      } finally {
+        tree.delete();
+      }
+    }
+  } finally {
+    parser.delete();
+  }
+});
+
+test.each(['php', 'php_only'])('%s requires adjacent qualified name components', async (dialect) => {
+  const parser = new Parser().setLanguage(await Language.load(path.resolve(`tree-sitter-${dialect}.wasm`)));
+  try {
+    for (const [source, invalid] of [
+      [String.raw`fn\Library\read()`, false],
+      ['clone $x =& $y + +2', false],
+      ['clone $x =& $y - -2', false],
+      ['($x++) + 2', false],
+      ['($x--) - 2', false],
+      [String.raw`\Class\Library\read()`, false],
+      [String.raw`namespace\Class\read()`, false],
+      [String.raw`Fn\ read()`, true],
+      [String.raw`class\/* gap */read()`, true],
+      [String.raw`fn\Library \read()`, true],
+      [String.raw`fn \read()`, true],
+      [String.raw`fn\Library\ /* gap */ read()`, true],
+      [String.raw`\ Class\read()`, true],
+      [String.raw`namespace\Class\ read()`, true],
+      [String.raw`namespace \Class\read()`, true],
+    ] as const) {
+      const tree = parser.parse(`<?php ${source};`)!;
+      try {
+        expect(tree.rootNode.hasError, source).toBe(invalid);
       } finally {
         tree.delete();
       }
