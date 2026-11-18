@@ -216,7 +216,6 @@ module.exports = function defineGrammar(dialect) {
         $.try_statement,
         $.declare_statement,
         $.echo_statement,
-        $.exit_statement,
         $.unset_statement,
         $.const_declaration,
         $.function_definition,
@@ -762,11 +761,7 @@ module.exports = function defineGrammar(dialect) {
 
       echo_statement: $ => seq(keyword('echo'), $._expressions, $._semicolon),
 
-      exit_statement: $ => seq(
-        keyword('exit'),
-        optional(seq('(', optional($.expression), ')')),
-        $._semicolon,
-      ),
+      exit_expression: _ => choice(keyword('exit'), keyword('die')),
 
       unset_statement: $ => seq(
         keyword('unset'),
@@ -1127,6 +1122,7 @@ module.exports = function defineGrammar(dialect) {
         $._identifier,
         $.array_creation_expression,
         $.print_intrinsic,
+        $.exit_expression,
         $.anonymous_function,
         $.arrow_function,
         $.object_creation_expression,
@@ -1360,7 +1356,7 @@ module.exports = function defineGrammar(dialect) {
       ),
 
       function_call_expression: $ => prec(PREC.CALL, seq(
-        field('function', choice($._name, $._callable_expression)),
+        field('function', choice(alias(choice(keyword('exit', false), keyword('die', false)), $.name), $._name, $._callable_expression)),
         field('arguments', $.arguments),
       )),
 
@@ -1396,7 +1392,10 @@ module.exports = function defineGrammar(dialect) {
 
       arguments: $ => seq(
         '(',
-        optional(seq(commaSep1(choice($.argument, $.variadic_placeholder)), optional(','))),
+        optional(choice(
+          $.variadic_placeholder,
+          seq(commaSep1($.argument), optional(choice(',', seq(',', $.variadic_placeholder, optional(','))))),
+        )),
         ')',
       ),
 

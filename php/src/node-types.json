@@ -136,6 +136,10 @@
         "named": true
       },
       {
+        "type": "exit_expression",
+        "named": true
+      },
+      {
         "type": "function_call_expression",
         "named": true
       },
@@ -255,10 +259,6 @@
       },
       {
         "type": "enum_declaration",
-        "named": true
-      },
-      {
-        "type": "exit_statement",
         "named": true
       },
       {
@@ -2208,19 +2208,9 @@
     }
   },
   {
-    "type": "exit_statement",
+    "type": "exit_expression",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": false,
-      "types": [
-        {
-          "type": "expression",
-          "named": true
-        }
-      ]
-    }
+    "fields": {}
   },
   {
     "type": "expression_statement",
@@ -5926,6 +5916,10 @@
   },
   {
     "type": "default",
+    "named": false
+  },
+  {
+    "type": "die",
     "named": false
   },
   {
