@@ -69,6 +69,7 @@ const BASE_RESERVED_KEYWORD_SET = BASE_RESERVED_KEYWORDS.map(word => keyword(wor
 const IDENTIFIER_TYPE_KEYWORDS = ['bool', 'float', 'int', 'object', 'string'].map(word => keyword(word, false));
 const [EMPTY, EVAL, ISSET] = ['empty', 'eval', 'isset'].map(word => keyword(word, false));
 const EXPRESSION_INTRINSICS = [EMPTY, EVAL, ISSET];
+const TRAIT_ALIAS_MODIFIERS = ['abstract', 'final', 'private', 'protected', 'public', 'readonly', 'static'];
 
 /**
  * @see https://www.php.net/manual/en/reserved.other-reserved-words.php
@@ -156,6 +157,7 @@ module.exports = function defineGrammar(dialect) {
         ...OTHER_RESERVED_KEYWORD_SET,
       ],
       nothing: _ => [],
+      trait_alias: _ => TRAIT_ALIAS_MODIFIERS.map(word => keyword(word, false)),
       operand_keywords: _ => [...BASE_RESERVED_KEYWORD_SET, ...EXPRESSION_INTRINSICS],
     },
 
@@ -562,13 +564,13 @@ module.exports = function defineGrammar(dialect) {
         choice($.class_constant_access_expression, $._unreserved_identifier),
         keyword('as'),
         choice(
+          field('alias', reserved('trait_alias', $.name)),
           seq(
-            optional($.visibility_modifier),
-            $._unreserved_identifier,
-          ),
-          seq(
-            $.visibility_modifier,
-            optional($._unreserved_identifier),
+            field('modifier', choice(
+              $.final_modifier,
+              alias(choice(keyword('private', false), keyword('protected', false), keyword('public', false)), $.visibility_modifier),
+            )),
+            optional(field('alias', $._unreserved_identifier)),
           ),
         ),
       ),
