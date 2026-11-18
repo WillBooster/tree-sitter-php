@@ -37,6 +37,31 @@ test.each(['php', 'php_only'])('%s parses exit and die expressions and complete 
           tree.delete();
         }
       }
+      for (const source of [
+        'echo "${' + name + '}";',
+        'echo "${' + name + '[0]}";',
+        'echo <<<TEXT\n${' + name + '}\nTEXT;',
+        'echo `${' + name + '[0]}`;',
+      ]) {
+        const tree = parser.parse(`<?php ${source}`)!;
+        try {
+          expect(tree.rootNode.hasError, tree.rootNode.toString()).toBe(false);
+          const variables = tree.rootNode.descendantsOfType('dynamic_variable_name');
+          const names = variables.flatMap((node) => node.descendantsOfType('name').map((child) => child.text));
+          expect(names).toEqual([name]);
+          expect(tree.rootNode.descendantsOfType('exit_expression')).toHaveLength(0);
+        } finally {
+          tree.delete();
+        }
+      }
+      const dynamic = parser.parse('<?php echo "${' + name + '()}"; echo "${ ' + name + '}";')!;
+      try {
+        expect(dynamic.rootNode.hasError, dynamic.rootNode.toString()).toBe(false);
+        expect(dynamic.rootNode.descendantsOfType('exit_expression')).toHaveLength(1);
+        expect(dynamic.rootNode.descendantsOfType('function_call_expression')).toHaveLength(1);
+      } finally {
+        dynamic.delete();
+      }
       const parenthesized = parser.parse(`<?php (${name}(...))(1);`)!;
       try {
         expect(parenthesized.rootNode.hasError, parenthesized.rootNode.toString()).toBe(false);

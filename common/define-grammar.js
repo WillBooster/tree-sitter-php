@@ -122,6 +122,7 @@ module.exports = function defineGrammar(dialect) {
       $._namespace_use_prefix,
       $._namespace_use_separator,
       $._directive_name,
+      $._exit_interpolation_identifier,
       $.sentinel_error, // Unused token used to indicate error recovery mode
     ],
 
@@ -1523,7 +1524,17 @@ module.exports = function defineGrammar(dialect) {
         seq('[', $._simple_string_array_access_argument, ']'),
       )),
 
+      _exit_interpolation_name: $ => alias($._exit_interpolation_identifier, $.name),
+
+      _exit_interpolation_subscript: $ => seq($._exit_interpolation_name, '[', $.expression, ']'),
+
+      _exit_interpolation: $ => prec(1, seq('$', '{', choice(
+        $._exit_interpolation_name,
+        alias($._exit_interpolation_subscript, $.subscript_expression),
+      ), '}')),
+
       _simple_string_part: $ => choice(
+        alias($._exit_interpolation, $.dynamic_variable_name),
         alias($._simple_string_member_access_expression, $.member_access_expression),
         $._simple_variable,
         alias($._simple_string_subscript_expression, $.subscript_expression),

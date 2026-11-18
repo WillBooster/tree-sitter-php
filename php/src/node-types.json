@@ -1960,6 +1960,14 @@
           "named": true
         },
         {
+          "type": "name",
+          "named": true
+        },
+        {
+          "type": "subscript_expression",
+          "named": true
+        },
+        {
           "type": "variable_name",
           "named": true
         }

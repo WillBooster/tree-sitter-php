@@ -1,4 +1,4 @@
-// code-gauge-allow-file fileNcss 424 -- Full-parse scanner states share the lexer and immutable heredoc stack.
+// code-gauge-allow-file fileNcss 438 -- Full-parse scanner states share the lexer and immutable heredoc stack.
 #include "tree_sitter/array.h"
 #include "tree_sitter/parser.h"
 
@@ -22,6 +22,7 @@ enum TokenType {
     NAMESPACE_USE_PREFIX,
     NAMESPACE_USE_SEPARATOR,
     DIRECTIVE_NAME,
+    EXIT_INTERPOLATION_IDENTIFIER,
     SENTINEL_ERROR, // Unused token used to indicate error recovery mode
 };
 
@@ -377,13 +378,21 @@ static bool scan_namespace_use_block_comment(TSLexer *lexer);
 
 static bool scan_directive_name(TSLexer *lexer);
 
-// code-gauge-allow functionNcss 32 -- Dispatches the scanner states in lexical precedence order.
+static bool scan_exit_interpolation_identifier(TSLexer *lexer);
+
+// code-gauge-allow functionCognitiveComplexity 17 -- Selects a lexical state before consuming input.
+// code-gauge-allow functionNcss 34 -- Dispatches the scanner states in lexical precedence order.
 static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     if (valid_symbols[SENTINEL_ERROR]) {
         return false;
     }
 
     lexer->mark_end(lexer);
+
+    if (valid_symbols[EXIT_INTERPOLATION_IDENTIFIER] &&
+        (ascii_tolower(lexer->lookahead) == 'e' || ascii_tolower(lexer->lookahead) == 'd')) {
+        return scan_exit_interpolation_identifier(lexer);
+    }
 
     if (valid_symbols[DIRECTIVE_NAME]) {
         return scan_directive_name(lexer);
@@ -653,6 +662,22 @@ static bool scan_directive_name(TSLexer *lexer) {
     }
     lexer->mark_end(lexer);
     lexer->result_symbol = DIRECTIVE_NAME;
+    return true;
+}
+
+static bool scan_exit_interpolation_identifier(TSLexer *lexer) {
+    const char *word = ascii_tolower(lexer->lookahead) == 'e' ? "exit" : "die";
+    for (; *word; word++) {
+        if (ascii_tolower(lexer->lookahead) != *word) {
+            return false;
+        }
+        advance(lexer);
+    }
+    if (lexer->lookahead != '}' && lexer->lookahead != '[') {
+        return false;
+    }
+    lexer->mark_end(lexer);
+    lexer->result_symbol = EXIT_INTERPOLATION_IDENTIFIER;
     return true;
 }
 

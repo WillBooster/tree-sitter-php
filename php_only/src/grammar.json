@@ -8933,9 +8933,87 @@
         ]
       }
     },
+    "_exit_interpolation_name": {
+      "type": "ALIAS",
+      "content": {
+        "type": "SYMBOL",
+        "name": "_exit_interpolation_identifier"
+      },
+      "named": true,
+      "value": "name"
+    },
+    "_exit_interpolation_subscript": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "_exit_interpolation_name"
+        },
+        {
+          "type": "STRING",
+          "value": "["
+        },
+        {
+          "type": "SYMBOL",
+          "name": "expression"
+        },
+        {
+          "type": "STRING",
+          "value": "]"
+        }
+      ]
+    },
+    "_exit_interpolation": {
+      "type": "PREC",
+      "value": 1,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "$"
+          },
+          {
+            "type": "STRING",
+            "value": "{"
+          },
+          {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "_exit_interpolation_name"
+              },
+              {
+                "type": "ALIAS",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "_exit_interpolation_subscript"
+                },
+                "named": true,
+                "value": "subscript_expression"
+              }
+            ]
+          },
+          {
+            "type": "STRING",
+            "value": "}"
+          }
+        ]
+      }
+    },
     "_simple_string_part": {
       "type": "CHOICE",
       "members": [
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_exit_interpolation"
+          },
+          "named": true,
+          "value": "dynamic_variable_name"
+        },
         {
           "type": "ALIAS",
           "content": {
@@ -11296,6 +11374,10 @@
     {
       "type": "SYMBOL",
       "name": "_directive_name"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_exit_interpolation_identifier"
     },
     {
       "type": "SYMBOL",
