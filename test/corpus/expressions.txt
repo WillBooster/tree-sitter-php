@@ -124,13 +124,19 @@ Cast expressions in assignments
 (program
   (php_tag)
   (expression_statement
-    (assignment_expression
-      (cast_expression (cast_type) (variable_name (name)))
-      (cast_expression (cast_type) (variable_name (name)))))
-   (expression_statement
-    (augmented_assignment_expression
-      (cast_expression (cast_type) (variable_name (name)))
-      (integer))))
+    (cast_expression
+      type: (cast_type)
+      value: (assignment_expression
+        left: (variable_name (name))
+        right: (cast_expression
+          type: (cast_type)
+          value: (variable_name (name))))))
+  (expression_statement
+    (cast_expression
+      type: (cast_type)
+      value: (augmented_assignment_expression
+        left: (variable_name (name))
+        right: (integer)))))
 
 =================================
 Cast include
@@ -1378,7 +1384,7 @@ References
 
 <?php
 
-$a =& new B;
+$a =& referencedValue();
 $a = &$x;
 
 function test($a, &... $b) {}
@@ -1426,7 +1432,7 @@ class A {
   (expression_statement
     (reference_assignment_expression
       (variable_name (name))
-      (object_creation_expression (name))
+      (function_call_expression (name) (arguments))
     )
   )
   (expression_statement
@@ -1701,6 +1707,8 @@ Dynamic class constant access
 
 <?php
 Foo::{$bar};
+Foo::{'VALUE'};
+Foo::{1 + 2};
 
 ---
 
@@ -1709,7 +1717,15 @@ Foo::{$bar};
   (expression_statement
     (class_constant_access_expression
       (name)
-      (name (variable_name (name))))))
+      name_expression: (variable_name (name))))
+  (expression_statement
+    (class_constant_access_expression
+      (name)
+      name_expression: (string (string_content))))
+  (expression_statement
+    (class_constant_access_expression
+      (name)
+      name_expression: (binary_expression left: (integer) right: (integer)))))
 
 
 ===============================================

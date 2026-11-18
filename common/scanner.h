@@ -1,4 +1,4 @@
-// code-gauge-allow-file fileNcss 521 -- Full-parse scanner states share the lexer and immutable heredoc stack.
+// code-gauge-allow-file fileNcss 530 -- Full-parse scanner states share the lexer and immutable heredoc stack.
 #include "tree_sitter/array.h"
 #include "tree_sitter/parser.h"
 
@@ -18,7 +18,7 @@ enum TokenType {
     HEREDOC_END,
     NOWDOC_STRING,
     HEREDOC_LINE_START,
-    QUALIFIED_KEYWORD,
+    QUALIFIED_NAME_PREFIX,
     NAMESPACE_USE_PREFIX,
     NAMESPACE_USE_SEPARATOR,
     DIRECTIVE_NAME,
@@ -29,6 +29,8 @@ enum TokenType {
     SHORT_ECHO_KEYWORD,
     ADJACENT_PHP_BLOCKS,
     READONLY_CALL_NAME,
+    PLUS_SIGN,
+    MINUS_SIGN,
     SENTINEL_ERROR, // Unused token used to indicate error recovery mode
 };
 
@@ -289,18 +291,19 @@ static inline bool scan_heredoc_closing_line(Scanner *scanner, TSLexer *lexer, b
 }
 
 static inline bool starts_after_variable_access(TSLexer *lexer, bool *has_content) {
-    if (lexer->lookahead != '[' && lexer->lookahead != '-') {
+    if (lexer->lookahead != '[' && lexer->lookahead != '-' && lexer->lookahead != '?') {
         return false;
     }
     lexer->mark_end(lexer);
     if (lexer->lookahead == '[') {
         return true;
     }
-    advance(lexer);
-    if (lexer->lookahead == '>') {
+    if (lexer->lookahead == '?') advance(lexer);
+    if (lexer->lookahead == '-') {
         advance(lexer);
-        if (is_valid_name_char(lexer)) {
-            return true;
+        if (lexer->lookahead == '>') {
+            advance(lexer);
+            if (is_valid_name_start(lexer)) return true;
         }
     }
     *has_content = true;
@@ -367,11 +370,10 @@ static bool scan_heredoc_end(Scanner *scanner, TSLexer *lexer);
 
 static bool scan_heredoc_start(Scanner *scanner, TSLexer *lexer);
 
-static const char *qualified_keyword_start(TSLexer *lexer);
+static PrefixScanResult scan_operand_prefix(TSLexer *lexer, const bool *valid_symbols);
 
-static bool scan_qualified_keyword(TSLexer *lexer, const char *word);
-
-static PrefixScanResult scan_name_prefix(TSLexer *lexer, const bool *valid_symbols);
+static PrefixScanResult scan_expression_name(TSLexer *lexer, bool qualified, bool readonly);
+static bool scan_sign(TSLexer *lexer, enum TokenType symbol);
 
 static bool scan_namespace_use_prefix(TSLexer *lexer);
 
@@ -394,8 +396,6 @@ static bool scan_php_echo_tag(Scanner *scanner, TSLexer *lexer);
 static bool scan_close_semicolon(TSLexer *lexer, const bool *valid_symbols);
 
 static bool scan_adjacent_php_blocks(TSLexer *lexer);
-
-static bool scan_readonly_call_name(TSLexer *lexer);
 
 static bool scan_exit_interpolation_identifier(TSLexer *lexer);
 
@@ -456,7 +456,7 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
         return scan_heredoc_end(scanner, lexer);
     }
 
-    PrefixScanResult prefix = scan_name_prefix(lexer, valid_symbols);
+    PrefixScanResult prefix = scan_operand_prefix(lexer, valid_symbols);
     if (prefix != NoPrefix) {
         return prefix == PrefixAccepted;
     }
@@ -586,9 +586,12 @@ static bool scan_heredoc_start(Scanner *scanner, TSLexer *lexer) {
     return true;
 }
 
-// code-gauge-allow functionCognitiveComplexity 19 -- Keeps overlapping identifier prefixes in scanner precedence order.
-static PrefixScanResult scan_name_prefix(TSLexer *lexer, const bool *valid_symbols) {
-    if (valid_symbols[NAMESPACE_USE_SEPARATOR] || valid_symbols[NAMESPACE_USE_PREFIX] || valid_symbols[READONLY_CALL_NAME]) {
+// code-gauge-allow functionCognitiveComplexity 23 -- Checks overlapping namespace and operator tokens before scanning an ordinary expression name.
+static PrefixScanResult scan_operand_prefix(TSLexer *lexer, const bool *valid_symbols) {
+    bool qualified = valid_symbols[QUALIFIED_NAME_PREFIX];
+    bool readonly = valid_symbols[READONLY_CALL_NAME];
+    if (valid_symbols[NAMESPACE_USE_SEPARATOR] || valid_symbols[NAMESPACE_USE_PREFIX] || qualified || readonly ||
+        valid_symbols[PLUS_SIGN] || valid_symbols[MINUS_SIGN]) {
         while (is_php_whitespace(lexer->lookahead)) {
             skip(lexer);
         }
@@ -599,28 +602,53 @@ static PrefixScanResult scan_name_prefix(TSLexer *lexer, const bool *valid_symbo
     if (valid_symbols[NAMESPACE_USE_PREFIX] && is_valid_name_start(lexer)) {
         return scan_namespace_use_prefix(lexer) ? PrefixAccepted : PrefixRejected;
     }
-    if (valid_symbols[READONLY_CALL_NAME] && ascii_tolower(lexer->lookahead) == 'r') {
-        return scan_readonly_call_name(lexer) ? PrefixAccepted : PrefixRejected;
+    if (valid_symbols[PLUS_SIGN] && lexer->lookahead == '+') {
+        return scan_sign(lexer, PLUS_SIGN) ? PrefixAccepted : PrefixRejected;
     }
-    if (!valid_symbols[QUALIFIED_KEYWORD]) {
-        return NoPrefix;
+    if (valid_symbols[MINUS_SIGN] && lexer->lookahead == '-') {
+        return scan_sign(lexer, MINUS_SIGN) ? PrefixAccepted : PrefixRejected;
     }
-    const char *keyword = qualified_keyword_start(lexer);
-    if (!keyword) {
-        return NoPrefix;
-    }
-    return scan_qualified_keyword(lexer, keyword) ? PrefixAccepted : PrefixRejected;
+    if ((!qualified && !readonly) || !is_valid_name_start(lexer)) return NoPrefix;
+    return scan_expression_name(lexer, qualified, readonly);
 }
 
-static bool scan_readonly_call_name(TSLexer *lexer) {
-    const char name[] = "readonly";
-    for (const char *character = name; *character; character++) {
-        if (ascii_tolower(lexer->lookahead) != *character) return false;
-        advance(lexer);
+static bool scan_sign(TSLexer *lexer, enum TokenType symbol) {
+    int32_t sign = lexer->lookahead;
+    advance(lexer);
+    if (lexer->lookahead == sign || lexer->lookahead == '=' ||
+        (sign == '-' && lexer->lookahead == '>')) {
+        return false;
     }
     lexer->mark_end(lexer);
-    lexer->result_symbol = READONLY_CALL_NAME;
-    return scan_php_gap(lexer) && lexer->lookahead == '(';
+    lexer->result_symbol = symbol;
+    return true;
+}
+
+// code-gauge-allow functionCognitiveComplexity 16 -- Scans a complete identifier before accepting a qualified or contextual keyword token.
+static PrefixScanResult scan_expression_name(TSLexer *lexer, bool qualified, bool readonly) {
+    const char *readonly_suffix = "readonly";
+    const char *namespace_suffix = "namespace";
+    bool relative = qualified;
+    do {
+        int32_t c = ascii_tolower(lexer->lookahead);
+        if (readonly && *readonly_suffix && c == *readonly_suffix) readonly_suffix++;
+        else readonly = false;
+        if (relative && *namespace_suffix && c == *namespace_suffix) namespace_suffix++;
+        else relative = false;
+        advance(lexer);
+    } while (is_valid_name_char(lexer));
+    lexer->mark_end(lexer);
+    if (qualified && !(relative && !*namespace_suffix) && lexer->lookahead == '\\') {
+        advance(lexer);
+        if (!is_valid_name_start(lexer)) return PrefixRejected;
+        lexer->result_symbol = QUALIFIED_NAME_PREFIX;
+        return PrefixAccepted;
+    }
+    if (readonly && !*readonly_suffix && scan_php_gap(lexer) && lexer->lookahead == '(') {
+        lexer->result_symbol = READONLY_CALL_NAME;
+        return PrefixAccepted;
+    }
+    return PrefixRejected;
 }
 
 static bool scan_namespace_use_prefix(TSLexer *lexer) {
@@ -792,42 +820,6 @@ static bool scan_exit_interpolation_identifier(TSLexer *lexer) {
     }
     lexer->mark_end(lexer);
     lexer->result_symbol = EXIT_INTERPOLATION_IDENTIFIER;
-    return true;
-}
-
-static const char *qualified_keyword_start(TSLexer *lexer) {
-    while (is_php_whitespace(lexer->lookahead)) {
-        skip(lexer);
-    }
-
-    switch (lexer->lookahead) {
-        case 'a':
-        case 'A':
-            return "array";
-        case 'f':
-        case 'F':
-            return "function";
-        case 'm':
-        case 'M':
-            return "match";
-        default:
-            return NULL;
-    }
-}
-
-static bool scan_qualified_keyword(TSLexer *lexer, const char *word) {
-    for (; *word; word++) {
-        if (ascii_tolower(lexer->lookahead) != *word) {
-            return false;
-        }
-        advance(lexer);
-    }
-
-    if (lexer->lookahead != '\\') {
-        return false;
-    }
-    lexer->mark_end(lexer);
-    lexer->result_symbol = QUALIFIED_KEYWORD;
     return true;
 }
 
