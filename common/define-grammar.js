@@ -1123,6 +1123,7 @@ module.exports = function defineGrammar(dialect) {
         $.array_creation_expression,
         $.print_intrinsic,
         $.exit_expression,
+        alias($._exit_call, $.function_call_expression),
         $.anonymous_function,
         $.arrow_function,
         $.object_creation_expression,
@@ -1355,8 +1356,13 @@ module.exports = function defineGrammar(dialect) {
         ),
       ),
 
+      _exit_call: $ => prec(PREC.CALL, seq(
+        field('function', alias(choice(keyword('exit', false), keyword('die', false)), $.name)),
+        field('arguments', $.arguments),
+      )),
+
       function_call_expression: $ => prec(PREC.CALL, seq(
-        field('function', choice(alias(choice(keyword('exit', false), keyword('die', false)), $.name), $._name, $._callable_expression)),
+        field('function', choice($._name, $._callable_expression)),
         field('arguments', $.arguments),
       )),
 

@@ -24,6 +24,10 @@ test.each(['php', 'php_only'])('%s parses exit and die expressions and complete 
         `foo\\${name}();`,
         `namespace ${name}\\N; class C {const ${name}=1;} echo C::${name};`,
         `use ${name}\\N as Alias;`,
+        `class C {use T {${name} as alias;}}`,
+        `new C(${name}: 1);`,
+        `#[A(${name}: 1)] class C {}`,
+        `$object?->method(${name}: 1);`,
       ]) {
         const tree = parser.parse(`<?php ${source}`)!;
         try {
@@ -32,6 +36,12 @@ test.each(['php', 'php_only'])('%s parses exit and die expressions and complete 
         } finally {
           tree.delete();
         }
+      }
+      const parenthesized = parser.parse(`<?php (${name}(...))(1);`)!;
+      try {
+        expect(parenthesized.rootNode.hasError, parenthesized.rootNode.toString()).toBe(false);
+      } finally {
+        parenthesized.delete();
       }
       for (const args of ['', '1', 'status: "bye"', '...["bye"]', '"first", print("second")', '...']) {
         const tree = parser.parse(`<?php $value = ${name}(${args});`)!;
@@ -45,7 +55,19 @@ test.each(['php', 'php_only'])('%s parses exit and die expressions and complete 
         }
       }
     }
-    for (const source of ['exit 1;', 'die "bye";', 'exit(status:);', 'exit(...,);', 'die(...); exit(1;']) {
+    for (const source of [
+      'exit()->method();',
+      'die()::X;',
+      'exit()[0];',
+      'exit()();',
+      'exit() = 1;',
+      'exit(...)(1);',
+      'exit 1;',
+      'die "bye";',
+      'exit(status:);',
+      'exit(...,);',
+      'die(...); exit(1;',
+    ]) {
       const tree = parser.parse(`<?php ${source}`)!;
       try {
         expect(tree.rootNode.hasError, source).toBe(true);

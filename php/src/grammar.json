@@ -6704,6 +6704,15 @@
           "name": "exit_expression"
         },
         {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_exit_call"
+          },
+          "named": true,
+          "value": "function_call_expression"
+        },
+        {
           "type": "SYMBOL",
           "name": "anonymous_function"
         },
@@ -7911,6 +7920,47 @@
         }
       ]
     },
+    "_exit_call": {
+      "type": "PREC",
+      "value": 25,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "FIELD",
+            "name": "function",
+            "content": {
+              "type": "ALIAS",
+              "content": {
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "PATTERN",
+                    "value": "exit",
+                    "flags": "i"
+                  },
+                  {
+                    "type": "PATTERN",
+                    "value": "die",
+                    "flags": "i"
+                  }
+                ]
+              },
+              "named": true,
+              "value": "name"
+            }
+          },
+          {
+            "type": "FIELD",
+            "name": "arguments",
+            "content": {
+              "type": "SYMBOL",
+              "name": "arguments"
+            }
+          }
+        ]
+      }
+    },
     "function_call_expression": {
       "type": "PREC",
       "value": 25,
@@ -7923,26 +7973,6 @@
             "content": {
               "type": "CHOICE",
               "members": [
-                {
-                  "type": "ALIAS",
-                  "content": {
-                    "type": "CHOICE",
-                    "members": [
-                      {
-                        "type": "PATTERN",
-                        "value": "exit",
-                        "flags": "i"
-                      },
-                      {
-                        "type": "PATTERN",
-                        "value": "die",
-                        "flags": "i"
-                      }
-                    ]
-                  },
-                  "named": true,
-                  "value": "name"
-                },
                 {
                   "type": "SYMBOL",
                   "name": "_name"
