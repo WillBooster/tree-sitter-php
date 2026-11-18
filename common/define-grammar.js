@@ -134,6 +134,7 @@ module.exports = function defineGrammar(dialect) {
       $._short_echo_keyword,
       $._adjacent_php_blocks,
       $._readonly_call_name,
+      $._enum_declaration_keyword,
       $._plus_sign,
       $._minus_sign,
       $.sentinel_error, // Unused token used to indicate error recovery mode
@@ -403,7 +404,7 @@ module.exports = function defineGrammar(dialect) {
 
       enum_declaration: $ => prec.right(seq(
         optional(field('attributes', $.attribute_list)),
-        keyword('enum'),
+        alias($._enum_declaration_keyword, 'enum'),
         field('name', reserved('classes', $.name)),
         optional(seq(':', alias(choice('string', 'int'), $.primitive_type))),
         optional($.class_interface_clause),

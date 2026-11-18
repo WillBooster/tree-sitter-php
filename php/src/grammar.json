@@ -1748,9 +1748,8 @@
           {
             "type": "ALIAS",
             "content": {
-              "type": "PATTERN",
-              "value": "enum",
-              "flags": "i"
+              "type": "SYMBOL",
+              "name": "_enum_declaration_keyword"
             },
             "named": false,
             "value": "enum"
@@ -12265,6 +12264,10 @@
     {
       "type": "SYMBOL",
       "name": "_readonly_call_name"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_enum_declaration_keyword"
     },
     {
       "type": "SYMBOL",

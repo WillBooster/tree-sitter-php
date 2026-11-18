@@ -1,4 +1,4 @@
-// code-gauge-allow-file fileNcss 530 -- Full-parse scanner states share the lexer and immutable heredoc stack.
+// code-gauge-allow-file fileNcss 534 -- Full-parse scanner states share the lexer and immutable heredoc stack.
 #include "tree_sitter/array.h"
 #include "tree_sitter/parser.h"
 
@@ -29,6 +29,7 @@ enum TokenType {
     SHORT_ECHO_KEYWORD,
     ADJACENT_PHP_BLOCKS,
     READONLY_CALL_NAME,
+    ENUM_DECLARATION_KEYWORD,
     PLUS_SIGN,
     MINUS_SIGN,
     SENTINEL_ERROR, // Unused token used to indicate error recovery mode
@@ -372,7 +373,7 @@ static bool scan_heredoc_start(Scanner *scanner, TSLexer *lexer);
 
 static PrefixScanResult scan_operand_prefix(TSLexer *lexer, const bool *valid_symbols);
 
-static PrefixScanResult scan_expression_name(TSLexer *lexer, bool qualified, bool readonly);
+static PrefixScanResult scan_expression_name(TSLexer *lexer, bool qualified, bool readonly, bool enum_declaration);
 static bool scan_sign(TSLexer *lexer, enum TokenType symbol);
 
 static bool scan_namespace_use_prefix(TSLexer *lexer);
@@ -590,7 +591,8 @@ static bool scan_heredoc_start(Scanner *scanner, TSLexer *lexer) {
 static PrefixScanResult scan_operand_prefix(TSLexer *lexer, const bool *valid_symbols) {
     bool qualified = valid_symbols[QUALIFIED_NAME_PREFIX];
     bool readonly = valid_symbols[READONLY_CALL_NAME];
-    if (valid_symbols[NAMESPACE_USE_SEPARATOR] || valid_symbols[NAMESPACE_USE_PREFIX] || qualified || readonly ||
+    bool enum_declaration = valid_symbols[ENUM_DECLARATION_KEYWORD];
+    if (valid_symbols[NAMESPACE_USE_SEPARATOR] || valid_symbols[NAMESPACE_USE_PREFIX] || qualified || readonly || enum_declaration ||
         valid_symbols[PLUS_SIGN] || valid_symbols[MINUS_SIGN]) {
         while (is_php_whitespace(lexer->lookahead)) {
             skip(lexer);
@@ -608,8 +610,8 @@ static PrefixScanResult scan_operand_prefix(TSLexer *lexer, const bool *valid_sy
     if (valid_symbols[MINUS_SIGN] && lexer->lookahead == '-') {
         return scan_sign(lexer, MINUS_SIGN) ? PrefixAccepted : PrefixRejected;
     }
-    if ((!qualified && !readonly) || !is_valid_name_start(lexer)) return NoPrefix;
-    return scan_expression_name(lexer, qualified, readonly);
+    if ((!qualified && !readonly && !enum_declaration) || !is_valid_name_start(lexer)) return NoPrefix;
+    return scan_expression_name(lexer, qualified, readonly, enum_declaration);
 }
 
 static bool scan_sign(TSLexer *lexer, enum TokenType symbol) {
@@ -624,28 +626,45 @@ static bool scan_sign(TSLexer *lexer, enum TokenType symbol) {
     return true;
 }
 
-// code-gauge-allow functionCognitiveComplexity 16 -- Scans a complete identifier before accepting a qualified or contextual keyword token.
-static PrefixScanResult scan_expression_name(TSLexer *lexer, bool qualified, bool readonly) {
-    const char *readonly_suffix = "readonly";
-    const char *namespace_suffix = "namespace";
-    bool relative = qualified;
+static const char *match_name_char(const char *suffix, int32_t c) {
+    return suffix && *suffix == c ? suffix + 1 : NULL;
+}
+
+static bool scan_enum_name(TSLexer *lexer) {
+    if (!scan_php_gap(lexer) || !is_valid_name_start(lexer)) return false;
+    int32_t c = ascii_tolower(lexer->lookahead);
+    const char *excluded = c == 'e' ? "extends" : c == 'i' ? "implements" : NULL;
+    while (excluded && *excluded && ascii_tolower(lexer->lookahead) == *excluded) {
+        advance(lexer);
+        excluded++;
+    }
+    return !excluded || *excluded;
+}
+
+static PrefixScanResult scan_expression_name(TSLexer *lexer, bool qualified, bool readonly, bool enum_declaration) {
+    const char *readonly_suffix = readonly ? "readonly" : NULL;
+    const char *namespace_suffix = qualified ? "namespace" : NULL;
+    const char *enum_suffix = enum_declaration ? "enum" : NULL;
     do {
         int32_t c = ascii_tolower(lexer->lookahead);
-        if (readonly && *readonly_suffix && c == *readonly_suffix) readonly_suffix++;
-        else readonly = false;
-        if (relative && *namespace_suffix && c == *namespace_suffix) namespace_suffix++;
-        else relative = false;
+        readonly_suffix = match_name_char(readonly_suffix, c);
+        namespace_suffix = match_name_char(namespace_suffix, c);
+        enum_suffix = match_name_char(enum_suffix, c);
         advance(lexer);
     } while (is_valid_name_char(lexer));
     lexer->mark_end(lexer);
-    if (qualified && !(relative && !*namespace_suffix) && lexer->lookahead == '\\') {
+    if (qualified && (!namespace_suffix || *namespace_suffix) && lexer->lookahead == '\\') {
         advance(lexer);
         if (!is_valid_name_start(lexer)) return PrefixRejected;
         lexer->result_symbol = QUALIFIED_NAME_PREFIX;
         return PrefixAccepted;
     }
-    if (readonly && !*readonly_suffix && scan_php_gap(lexer) && lexer->lookahead == '(') {
+    if (readonly_suffix && !*readonly_suffix && scan_php_gap(lexer) && lexer->lookahead == '(') {
         lexer->result_symbol = READONLY_CALL_NAME;
+        return PrefixAccepted;
+    }
+    if (enum_suffix && !*enum_suffix && scan_enum_name(lexer)) {
+        lexer->result_symbol = ENUM_DECLARATION_KEYWORD;
         return PrefixAccepted;
     }
     return PrefixRejected;
