@@ -2130,6 +2130,10 @@
           "named": true
         },
         {
+          "type": "nullsafe_member_access_expression",
+          "named": true
+        },
+        {
           "type": "string_content",
           "named": true
         },
@@ -2707,6 +2711,10 @@
         },
         {
           "type": "member_access_expression",
+          "named": true
+        },
+        {
+          "type": "nullsafe_member_access_expression",
           "named": true
         },
         {
@@ -4789,6 +4797,10 @@
         },
         {
           "type": "member_access_expression",
+          "named": true
+        },
+        {
+          "type": "nullsafe_member_access_expression",
           "named": true
         },
         {

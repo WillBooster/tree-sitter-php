@@ -1,4 +1,4 @@
-// code-gauge-allow-file fileNcss 521 -- Full-parse scanner states share the lexer and immutable heredoc stack.
+// code-gauge-allow-file fileNcss 530 -- Full-parse scanner states share the lexer and immutable heredoc stack.
 #include "tree_sitter/array.h"
 #include "tree_sitter/parser.h"
 
@@ -289,18 +289,19 @@ static inline bool scan_heredoc_closing_line(Scanner *scanner, TSLexer *lexer, b
 }
 
 static inline bool starts_after_variable_access(TSLexer *lexer, bool *has_content) {
-    if (lexer->lookahead != '[' && lexer->lookahead != '-') {
+    if (lexer->lookahead != '[' && lexer->lookahead != '-' && lexer->lookahead != '?') {
         return false;
     }
     lexer->mark_end(lexer);
     if (lexer->lookahead == '[') {
         return true;
     }
-    advance(lexer);
-    if (lexer->lookahead == '>') {
+    if (lexer->lookahead == '?') advance(lexer);
+    if (lexer->lookahead == '-') {
         advance(lexer);
-        if (is_valid_name_char(lexer)) {
-            return true;
+        if (lexer->lookahead == '>') {
+            advance(lexer);
+            if (is_valid_name_start(lexer)) return true;
         }
     }
     *has_content = true;
@@ -807,6 +808,12 @@ static const char *qualified_keyword_start(TSLexer *lexer) {
         case 'f':
         case 'F':
             return "function";
+        case 'd':
+        case 'D':
+            return "default";
+        case 'l':
+        case 'L':
+            return "list";
         case 'm':
         case 'M':
             return "match";

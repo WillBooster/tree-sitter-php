@@ -58,7 +58,7 @@ const BASE_RESERVED_KEYWORDS = [
   'endfor', 'endforeach', 'endif', 'endswitch', 'endwhile', 'extends',
   'final', 'finally', 'fn', 'for', 'foreach', 'function',
   'global', 'goto', 'if', 'implements', 'include', 'include_once',
-  'instanceof', 'insteadof', 'interface', 'match', 'namespace', 'new',
+  'instanceof', 'insteadof', 'interface', 'list', 'match', 'namespace', 'new',
   'or', 'print', 'private', 'protected', 'public', 'readonly',
   'require', 'require_once', 'return', 'static', 'switch', 'throw',
   'trait', 'try', 'unset', 'use', 'var', 'while', 'xor', 'yield from', 'yield',
@@ -150,6 +150,7 @@ module.exports = function defineGrammar(dialect) {
         ...OTHER_RESERVED_KEYWORD_SET,
       ],
       nothing: _ => [],
+      operand_keywords: _ => [keyword('list', false), keyword('default', false)],
     },
 
     supertypes: $ => [
@@ -1136,7 +1137,8 @@ module.exports = function defineGrammar(dialect) {
         $.class_constant_access_expression,
         $.qualified_name,
         $.relative_name,
-        $._identifier,
+        reserved('operand_keywords', $.name),
+        alias(choice(...IDENTIFIER_TYPE_KEYWORDS), $.name),
         $.array_creation_expression,
         $.print_intrinsic,
         $.exit_expression,
@@ -1371,7 +1373,15 @@ module.exports = function defineGrammar(dialect) {
       )),
 
       function_call_expression: $ => prec(PREC.CALL, seq(
-        field('function', choice($._name, alias($._readonly_call_name, $.name), $._callable_expression)),
+        field('function', choice(
+          reserved('operand_keywords', $.name),
+          alias(keyword('static', false), $.name),
+          alias(choice(...IDENTIFIER_TYPE_KEYWORDS), $.name),
+          $.qualified_name,
+          $.relative_name,
+          alias($._readonly_call_name, $.name),
+          $._callable_expression,
+        )),
         field('arguments', $.arguments),
       )),
 
@@ -1430,8 +1440,10 @@ module.exports = function defineGrammar(dialect) {
           choice(
             $._unreserved_identifier,
             keyword('array', false),
+            keyword('default', false),
             keyword('fn', false),
             keyword('function', false),
+            keyword('list', false),
             keyword('match', false),
             keyword('namespace', false),
             keyword('null', false),
@@ -1518,6 +1530,12 @@ module.exports = function defineGrammar(dialect) {
         field('name', $._unreserved_identifier),
       )),
 
+      _simple_string_nullsafe_member_access_expression: $ => prec(PREC.MEMBER, seq(
+        field('object', $.variable_name),
+        '?->',
+        field('name', $._unreserved_identifier),
+      )),
+
       _simple_string_subscript_unary_expression: $ => prec.left(seq('-', $.integer)),
 
       _simple_string_array_access_argument: $ => choice(
@@ -1544,6 +1562,7 @@ module.exports = function defineGrammar(dialect) {
       _simple_string_part: $ => choice(
         alias($._exit_interpolation, $.dynamic_variable_name),
         alias($._simple_string_member_access_expression, $.member_access_expression),
+        alias($._simple_string_nullsafe_member_access_expression, $.nullsafe_member_access_expression),
         $._simple_variable,
         alias($._simple_string_subscript_expression, $.subscript_expression),
       ),
