@@ -83,6 +83,7 @@ test.each(['php', 'php_only'])('%s preserves operand expressions and rejects a l
       ['(int)$x += 1', 'cast_expression', 'value', 'augmented_assignment_expression'],
       ['(int)$x =& $y', 'cast_expression', 'value', 'reference_assignment_expression'],
       ['clone $x = $y', 'clone_expression', undefined, 'assignment_expression'],
+      ['clone $x =& referencedValue()', 'clone_expression', undefined, 'reference_assignment_expression'],
       ['C::{"VALUE"}', 'class_constant_access_expression', 'name_expression', 'encapsed_string'],
       ['C::{getName() . $tail}', 'class_constant_access_expression', 'name_expression', 'binary_expression'],
     ] as const) {
@@ -104,6 +105,14 @@ test.each(['php', 'php_only'])('%s preserves operand expressions and rejects a l
       const tree = parser.parse(`<?php match (1) {${arms}};`)!;
       try {
         expect(tree.rootNode.hasError, arms).toBe(invalid);
+      } finally {
+        tree.delete();
+      }
+    }
+    for (const source of ['clone $x =& 1', '$x =& new C()', '(int)$x =& ($y)', '[$x] =& $y']) {
+      const tree = parser.parse(`<?php ${source};`)!;
+      try {
+        expect(tree.rootNode.hasError, source).toBe(true);
       } finally {
         tree.delete();
       }

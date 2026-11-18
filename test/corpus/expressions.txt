@@ -1384,7 +1384,7 @@ References
 
 <?php
 
-$a =& new B;
+$a =& referencedValue();
 $a = &$x;
 
 function test($a, &... $b) {}
@@ -1432,7 +1432,7 @@ class A {
   (expression_statement
     (reference_assignment_expression
       (variable_name (name))
-      (object_creation_expression (name))
+      (function_call_expression (name) (arguments))
     )
   )
   (expression_statement

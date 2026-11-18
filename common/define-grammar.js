@@ -1240,13 +1240,10 @@ module.exports = function defineGrammar(dialect) {
       )),
 
       reference_assignment_expression: $ => prec.right(PREC.ASSIGNMENT, seq(
-        field('left', choice(
-          $._variable,
-          $.list_literal,
-        )),
+        field('left', $._variable),
         '=',
         '&',
-        field('right', $.expression),
+        field('right', $._variable),
       )),
 
       conditional_expression: $ => prec.left(PREC.TERNARY, seq( // TODO: Ternay is non-assossiative after PHP 8
