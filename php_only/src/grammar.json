@@ -6891,7 +6891,16 @@
           "type": "ALIAS",
           "content": {
             "type": "SYMBOL",
-            "name": "_intrinsic_call"
+            "name": "_single_operand_intrinsic"
+          },
+          "named": true,
+          "value": "function_call_expression"
+        },
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_isset_call"
           },
           "named": true,
           "value": "function_call_expression"
@@ -8126,7 +8135,7 @@
         ]
       }
     },
-    "_intrinsic_call": {
+    "_single_operand_intrinsic": {
       "type": "PREC",
       "value": 27,
       "content": {
@@ -8149,11 +8158,6 @@
                     "type": "PATTERN",
                     "value": "eval",
                     "flags": "i"
-                  },
-                  {
-                    "type": "PATTERN",
-                    "value": "isset",
-                    "flags": "i"
                   }
                 ]
               },
@@ -8165,12 +8169,144 @@
             "type": "FIELD",
             "name": "arguments",
             "content": {
-              "type": "SYMBOL",
-              "name": "arguments"
+              "type": "ALIAS",
+              "content": {
+                "type": "SYMBOL",
+                "name": "_single_intrinsic_argument"
+              },
+              "named": true,
+              "value": "arguments"
             }
           }
         ]
       }
+    },
+    "_isset_call": {
+      "type": "PREC",
+      "value": 27,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "FIELD",
+            "name": "function",
+            "content": {
+              "type": "ALIAS",
+              "content": {
+                "type": "PATTERN",
+                "value": "isset",
+                "flags": "i"
+              },
+              "named": true,
+              "value": "name"
+            }
+          },
+          {
+            "type": "FIELD",
+            "name": "arguments",
+            "content": {
+              "type": "ALIAS",
+              "content": {
+                "type": "SYMBOL",
+                "name": "_isset_arguments"
+              },
+              "named": true,
+              "value": "arguments"
+            }
+          }
+        ]
+      }
+    },
+    "_single_intrinsic_argument": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "("
+        },
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_intrinsic_argument"
+          },
+          "named": true,
+          "value": "argument"
+        },
+        {
+          "type": "STRING",
+          "value": ")"
+        }
+      ]
+    },
+    "_isset_arguments": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "("
+        },
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "ALIAS",
+              "content": {
+                "type": "SYMBOL",
+                "name": "_intrinsic_argument"
+              },
+              "named": true,
+              "value": "argument"
+            },
+            {
+              "type": "REPEAT",
+              "content": {
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "STRING",
+                    "value": ","
+                  },
+                  {
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "SYMBOL",
+                      "name": "_intrinsic_argument"
+                    },
+                    "named": true,
+                    "value": "argument"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "STRING",
+              "value": ","
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "STRING",
+          "value": ")"
+        }
+      ]
+    },
+    "_intrinsic_argument": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "expression"
+        }
+      ]
     },
     "function_call_expression": {
       "type": "PREC",

@@ -67,7 +67,8 @@ const BASE_RESERVED_KEYWORDS = [
 const BASE_RESERVED_KEYWORD_SET = BASE_RESERVED_KEYWORDS.map(word => keyword(word, false));
 
 const IDENTIFIER_TYPE_KEYWORDS = ['bool', 'float', 'int', 'object', 'string'].map(word => keyword(word, false));
-const EXPRESSION_INTRINSICS = ['empty', 'eval', 'isset'].map(word => keyword(word, false));
+const [EMPTY, EVAL, ISSET] = ['empty', 'eval', 'isset'].map(word => keyword(word, false));
+const EXPRESSION_INTRINSICS = [EMPTY, EVAL, ISSET];
 
 /**
  * @see https://www.php.net/manual/en/reserved.other-reserved-words.php
@@ -1142,7 +1143,8 @@ module.exports = function defineGrammar(dialect) {
         alias(choice(...IDENTIFIER_TYPE_KEYWORDS), $.name),
         $.array_creation_expression,
         $.print_intrinsic,
-        alias($._intrinsic_call, $.function_call_expression),
+        alias($._single_operand_intrinsic, $.function_call_expression),
+        alias($._isset_call, $.function_call_expression),
         $.exit_expression,
         alias($._exit_call, $.function_call_expression),
         $.anonymous_function,
@@ -1374,10 +1376,26 @@ module.exports = function defineGrammar(dialect) {
         field('arguments', $.arguments),
       )),
 
-      _intrinsic_call: $ => prec(PREC.CALL, seq(
-        field('function', alias(choice(...EXPRESSION_INTRINSICS), $.name)),
-        field('arguments', $.arguments),
+      _single_operand_intrinsic: $ => prec(PREC.CALL, seq(
+        field('function', alias(choice(EMPTY, EVAL), $.name)),
+        field('arguments', alias($._single_intrinsic_argument, $.arguments)),
       )),
+
+      _isset_call: $ => prec(PREC.CALL, seq(
+        field('function', alias(ISSET, $.name)),
+        field('arguments', alias($._isset_arguments, $.arguments)),
+      )),
+
+      _single_intrinsic_argument: $ => seq('(', alias($._intrinsic_argument, $.argument), ')'),
+
+      _isset_arguments: $ => seq(
+        '(',
+        commaSep1(alias($._intrinsic_argument, $.argument)),
+        optional(','),
+        ')',
+      ),
+
+      _intrinsic_argument: $ => seq($.expression),
 
       function_call_expression: $ => prec(PREC.CALL, seq(
         field('function', choice(

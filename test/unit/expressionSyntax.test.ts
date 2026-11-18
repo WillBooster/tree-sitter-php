@@ -136,6 +136,14 @@ test.each(['php', 'php_only'])('%s preserves operand expressions and rejects a l
       '$x =& match()',
       '$x =& array()',
       '$x =& isset($y)',
+      'isset(list: $x)',
+      'empty(list: $x)',
+      'eval(name: "code")',
+      'isset()',
+      'isset(...$x)',
+      'isset(&$x)',
+      'empty($x,)',
+      'eval("code", "extra")',
     ]) {
       const tree = parser.parse(`<?php ${source};`)!;
       try {
@@ -175,6 +183,34 @@ test.each(['php', 'php_only'])('%s parses simple nullsafe interpolation in strin
       );
     } finally {
       tree.delete();
+    }
+  } finally {
+    parser.delete();
+  }
+});
+
+test.each(['php', 'php_only'])('%s retains intrinsic operands and ordinary named arguments', async (dialect) => {
+  const parser = new Parser().setLanguage(await Language.load(path.resolve(`tree-sitter-${dialect}.wasm`)));
+  try {
+    for (const [source, count] of [
+      ['isset($x, $y,)', 2],
+      ['empty($x + 1)', 1],
+      ['eval("code")', 1],
+      ['lookup(list: $x, isset: $y)', 2],
+    ] as const) {
+      const tree = parser.parse(`<?php ${source};`)!;
+      try {
+        expect(tree.rootNode.hasError, source).toBe(false);
+        const call = tree.rootNode.descendantsOfType('function_call_expression')[0];
+        const args = call?.childForFieldName('arguments');
+        expect(args?.type, source).toBe('arguments');
+        expect(
+          args?.namedChildren.map((arg) => arg.type),
+          source
+        ).toEqual(Array.from({ length: count }, () => 'argument'));
+      } finally {
+        tree.delete();
+      }
     }
   } finally {
     parser.delete();
