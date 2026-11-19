@@ -177,6 +177,47 @@ class C {
 }
 ---
 
+(ERROR)
+
+==========================
+Trait adaptations reject bare abstract
+:error
+==========================
+
+<?php
+class C {
+    use T { f as abstract; }
+}
+---
+
+(ERROR)
+
+==========================
+Trait adaptations reject bare readonly
+:error
+==========================
+
+<?php
+class C {
+    use T { f as readonly; }
+}
+---
+
+(ERROR)
+
+==========================
+Trait adaptations reject bare static
+:error
+==========================
+
+<?php
+class C {
+    use T { f as static; }
+}
+---
+
+(ERROR)
+
 ==========================
 Namespace use declarations
 ==========================
