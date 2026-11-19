@@ -2880,39 +2880,68 @@
           "type": "CHOICE",
           "members": [
             {
-              "type": "SEQ",
-              "members": [
-                {
-                  "type": "CHOICE",
-                  "members": [
-                    {
-                      "type": "SYMBOL",
-                      "name": "visibility_modifier"
-                    },
-                    {
-                      "type": "BLANK"
-                    }
-                  ]
-                },
-                {
+              "type": "FIELD",
+              "name": "alias",
+              "content": {
+                "type": "RESERVED",
+                "content": {
                   "type": "SYMBOL",
-                  "name": "_unreserved_identifier"
-                }
-              ]
+                  "name": "name"
+                },
+                "context_name": "trait_alias"
+              }
             },
             {
               "type": "SEQ",
               "members": [
                 {
-                  "type": "SYMBOL",
-                  "name": "visibility_modifier"
+                  "type": "FIELD",
+                  "name": "modifier",
+                  "content": {
+                    "type": "CHOICE",
+                    "members": [
+                      {
+                        "type": "SYMBOL",
+                        "name": "final_modifier"
+                      },
+                      {
+                        "type": "ALIAS",
+                        "content": {
+                          "type": "CHOICE",
+                          "members": [
+                            {
+                              "type": "PATTERN",
+                              "value": "private",
+                              "flags": "i"
+                            },
+                            {
+                              "type": "PATTERN",
+                              "value": "protected",
+                              "flags": "i"
+                            },
+                            {
+                              "type": "PATTERN",
+                              "value": "public",
+                              "flags": "i"
+                            }
+                          ]
+                        },
+                        "named": true,
+                        "value": "visibility_modifier"
+                      }
+                    ]
+                  }
                 },
                 {
                   "type": "CHOICE",
                   "members": [
                     {
-                      "type": "SYMBOL",
-                      "name": "_unreserved_identifier"
+                      "type": "FIELD",
+                      "name": "alias",
+                      "content": {
+                        "type": "SYMBOL",
+                        "name": "_unreserved_identifier"
+                      }
                     },
                     {
                       "type": "BLANK"
@@ -12989,6 +13018,43 @@
       }
     ],
     "nothing": [],
+    "trait_alias": [
+      {
+        "type": "PATTERN",
+        "value": "abstract",
+        "flags": "i"
+      },
+      {
+        "type": "PATTERN",
+        "value": "final",
+        "flags": "i"
+      },
+      {
+        "type": "PATTERN",
+        "value": "private",
+        "flags": "i"
+      },
+      {
+        "type": "PATTERN",
+        "value": "protected",
+        "flags": "i"
+      },
+      {
+        "type": "PATTERN",
+        "value": "public",
+        "flags": "i"
+      },
+      {
+        "type": "PATTERN",
+        "value": "readonly",
+        "flags": "i"
+      },
+      {
+        "type": "PATTERN",
+        "value": "static",
+        "flags": "i"
+      }
+    ],
     "operand_keywords": [
       {
         "type": "PATTERN",

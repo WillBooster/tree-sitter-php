@@ -129,6 +129,96 @@ class AbstractCache
             (name)))))))
 
 ==========================
+Final trait adaptations and aliases
+==========================
+
+<?php
+class C {
+    use T {
+        f as final;
+        T::f as Final another;
+        f as protected final;
+        f as final private;
+    }
+}
+---
+(program
+  (php_tag)
+  (class_declaration
+    name: (name)
+    body: (declaration_list
+      (use_declaration
+        (name)
+        (use_list
+          (use_as_clause
+            (name)
+            modifier: (final_modifier))
+          (use_as_clause
+            (class_constant_access_expression (name) (name))
+            modifier: (final_modifier)
+            alias: (name))
+          (use_as_clause
+            (name)
+            modifier: (visibility_modifier)
+            alias: (name))
+          (use_as_clause
+            (name)
+            modifier: (final_modifier)
+            alias: (name)))))))
+
+==========================
+Trait adaptations take one modifier
+:error
+==========================
+
+<?php
+class C {
+    use T { f as final public another; }
+}
+---
+
+(ERROR)
+
+==========================
+Trait adaptations reject bare abstract
+:error
+==========================
+
+<?php
+class C {
+    use T { f as abstract; }
+}
+---
+
+(ERROR)
+
+==========================
+Trait adaptations reject bare readonly
+:error
+==========================
+
+<?php
+class C {
+    use T { f as readonly; }
+}
+---
+
+(ERROR)
+
+==========================
+Trait adaptations reject bare static
+:error
+==========================
+
+<?php
+class C {
+    use T { f as static; }
+}
+---
+
+(ERROR)
+
+==========================
 Namespace use declarations
 ==========================
 
