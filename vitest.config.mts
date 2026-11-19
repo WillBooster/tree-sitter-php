@@ -2,6 +2,7 @@ import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vitest/config';
 
 const BrowserTests = ['test/e2e/browser.test.ts'];
+const PerformanceTests = ['test/unit/performance.test.ts'];
 
 export default defineConfig({
   test: {
@@ -13,7 +14,16 @@ export default defineConfig({
           name: 'node',
           globalSetup: 'test/helpers/installCli.ts',
           include: ['test/{unit,e2e}/**/*.test.ts'],
-          exclude: BrowserTests,
+          exclude: [...BrowserTests, ...PerformanceTests],
+        },
+      },
+      {
+        test: {
+          name: 'performance',
+          include: PerformanceTests,
+          // Compile Wasm with the optimizing compiler immediately: background tier-up can otherwise
+          // change execution speed between the small and large inputs despite measuring thread CPU time.
+          execArgv: ['--no-liftoff'],
         },
       },
       {
