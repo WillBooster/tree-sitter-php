@@ -1,4 +1,4 @@
-// code-gauge-allow-file fileNcss 534 -- Full-parse scanner states share the lexer and immutable heredoc stack.
+// code-gauge-allow-file fileNcss 540 -- Full-parse scanner states share the lexer and immutable heredoc stack.
 #include "tree_sitter/array.h"
 #include "tree_sitter/parser.h"
 
@@ -32,6 +32,7 @@ enum TokenType {
     ENUM_DECLARATION_KEYWORD,
     PLUS_SIGN,
     MINUS_SIGN,
+    PHP_TAG,
     SENTINEL_ERROR, // Unused token used to indicate error recovery mode
 };
 
@@ -392,7 +393,9 @@ static bool scan_block_comment(TSLexer *lexer);
 
 static bool scan_directive_name(TSLexer *lexer);
 
-static bool scan_php_echo_tag(Scanner *scanner, TSLexer *lexer);
+static bool scan_php_open_tag(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols);
+
+static bool scan_php_keyword(TSLexer *lexer);
 
 static bool scan_close_semicolon(TSLexer *lexer, const bool *valid_symbols);
 
@@ -414,12 +417,12 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
         lexer->result_symbol = SHORT_ECHO_KEYWORD;
         return true;
     }
-    if (valid_symbols[PHP_ECHO_TAG]) {
+    if (valid_symbols[PHP_ECHO_TAG] || valid_symbols[PHP_TAG]) {
         while (is_php_whitespace(lexer->lookahead)) {
             skip(lexer);
         }
         if (lexer->lookahead == '<') {
-            return scan_php_echo_tag(scanner, lexer);
+            return scan_php_open_tag(scanner, lexer, valid_symbols);
         }
     }
 
@@ -505,31 +508,46 @@ static bool scan_adjacent_php_blocks(TSLexer *lexer) {
     advance(lexer);
     if (lexer->lookahead != '?') return false;
     advance(lexer);
-    if (lexer->lookahead == '=') return false;
+    if (!scan_php_keyword(lexer)) return false;
     lexer->mark_end(lexer);
-    const char suffix[] = "php";
-    for (const char *character = suffix; *character; character++) {
-        if (ascii_tolower(lexer->lookahead) != *character) return true;
-        advance(lexer);
-    }
-    if (lexer->eof(lexer) || is_php_whitespace(lexer->lookahead)) lexer->mark_end(lexer);
     return true;
 }
 
-static bool scan_php_echo_tag(Scanner *scanner, TSLexer *lexer) {
+// Recognizes the openers PHP accepts with short_open_tag disabled (its php.ini-development and php.ini-production
+// value): `<?=`, and `<?php` followed by whitespace or the end of input. Any other `<?` stays inline text.
+static bool scan_php_open_tag(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     advance(lexer);
     if (lexer->lookahead != '?') {
         return false;
     }
     advance(lexer);
-    if (lexer->lookahead != '=') {
+    if (lexer->lookahead == '=') {
+        if (!valid_symbols[PHP_ECHO_TAG]) {
+            return false;
+        }
+        advance(lexer);
+        lexer->mark_end(lexer);
+        scanner->pending_echo = true;
+        lexer->result_symbol = PHP_ECHO_TAG;
+        return true;
+    }
+    if (!valid_symbols[PHP_TAG] || !scan_php_keyword(lexer)) {
         return false;
     }
-    advance(lexer);
     lexer->mark_end(lexer);
-    scanner->pending_echo = true;
-    lexer->result_symbol = PHP_ECHO_TAG;
+    lexer->result_symbol = PHP_TAG;
     return true;
+}
+
+// Consumes the `php` of a `<?php` opener, which PHP accepts only before whitespace or the end of input.
+static bool scan_php_keyword(TSLexer *lexer) {
+    for (const char *letter = "php"; *letter != '\0'; letter++) {
+        if (ascii_tolower(lexer->lookahead) != *letter) {
+            return false;
+        }
+        advance(lexer);
+    }
+    return lexer->eof(lexer) || is_php_whitespace(lexer->lookahead);
 }
 
 static bool scan_heredoc_line_start(Scanner *scanner, TSLexer *lexer) {

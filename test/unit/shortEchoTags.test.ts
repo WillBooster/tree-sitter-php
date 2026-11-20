@@ -73,7 +73,7 @@ test('closing tags complete PHP statements at their source boundary', async () =
       ['<?php if (true) echo 2 ?>\r\n<?php else echo 1;', false],
       ['<?php do ?><?php while (false);', false],
       ['<?php if (true) ?><? else echo 1;', false],
-      ['<?php do ?><? while (false);', false],
+      ['<?php do ?><? while (false);', true],
       ['<?php if (true) ?><?= 1; else echo 2;', true],
       ['<?php if (true): ?>hello<?php else: ?>world<?php endif;', false],
       ['<?php switch (1) { ?><?php case 1: break; }', false],
