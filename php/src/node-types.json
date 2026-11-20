@@ -4266,6 +4266,16 @@
           }
         ]
       },
+      "reference_modifier": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "reference_modifier",
+            "named": true
+          }
+        ]
+      },
       "type": {
         "multiple": false,
         "required": false,
