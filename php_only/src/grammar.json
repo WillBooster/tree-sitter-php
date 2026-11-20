@@ -57,10 +57,6 @@
         }
       ]
     },
-    "php_tag": {
-      "type": "PATTERN",
-      "value": "<\\?([pP][hH][pP])?"
-    },
     "php_end_tag": {
       "type": "STRING",
       "value": "?>"
@@ -12282,6 +12278,10 @@
     {
       "type": "SYMBOL",
       "name": "_minus_sign"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "php_tag"
     },
     {
       "type": "SYMBOL",

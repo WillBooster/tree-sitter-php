@@ -138,6 +138,7 @@ module.exports = function defineGrammar(dialect) {
       $._enum_declaration_keyword,
       $._plus_sign,
       $._minus_sign,
+      $.php_tag,
       $.sentinel_error, // Unused token used to indicate error recovery mode
     ],
 
@@ -193,7 +194,6 @@ module.exports = function defineGrammar(dialect) {
 
       _php_start: $ => choice($.php_tag, alias($._php_echo_tag, $.php_tag)),
 
-      php_tag: _ => /<\?([pP][hH][pP])?/,
       php_end_tag: _ => '?>',
 
       text_interpolation: $ => seq(

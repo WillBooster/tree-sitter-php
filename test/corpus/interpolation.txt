@@ -68,7 +68,7 @@ echo "bye";
   (text_interpolation (php_end_tag)))
 
 ==============================
-short open tag: On
+Bare short open tag is text
 ==============================
 
 <?
@@ -79,12 +79,23 @@ Finished
 ---
 
 (program
-  (php_tag)
-  (echo_statement (encapsed_string (string_content) (escape_sequence)))
-  (text_interpolation (php_end_tag) (text)))
+  (text))
 
 ==============================
-short open tag: Off
+Openers other than <?php and <?= are text
+==============================
+
+<?php echo 1; ?><?xml version="1.0"?><?php?><?phpx echo 2; <?PHP
+
+---
+
+(program
+  (php_tag)
+  (echo_statement (integer))
+  (text_interpolation (php_end_tag) (text) (php_tag)))
+
+==============================
+Short open tag mixed with full tags
 ==============================
 
 <div>one</div>
@@ -114,8 +125,6 @@ $a = 'This gets echoed twice';
   (text_interpolation (php_end_tag) (php_tag))
   (echo_statement (variable_name (name)))
   (text_interpolation (php_end_tag) (text) (php_tag))
-  (expression_statement (assignment_expression (variable_name (name)) (integer)))
-  (text_interpolation (php_end_tag) (php_tag))
   (echo_statement (encapsed_string (variable_name (name))))
   (text_interpolation (php_end_tag) (php_tag))
   (echo_statement (encapsed_string (variable_name (name))))
