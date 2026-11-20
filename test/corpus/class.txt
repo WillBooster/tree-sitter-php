@@ -1280,3 +1280,56 @@ class FinalValues {
             name: (variable_name (name))
             default_value: (integer)))
         body: (compound_statement)))))
+
+==================
+Constructor property hooks with default visibility
+==================
+
+<?php
+class Hooked {
+    function __construct(
+        &$other { get => $this->other; },
+        int $value = 2 { set => $value * 2; },
+    ) {}
+}
+function plain(int &$value = 2) {}
+
+---
+
+(program
+  (php_tag)
+  (class_declaration
+    name: (name)
+    body: (declaration_list
+      (method_declaration
+        name: (name)
+        parameters: (formal_parameters
+          (property_promotion_parameter
+            reference_modifier: (reference_modifier)
+            name: (variable_name (name))
+            (property_hook_list
+              (property_hook
+                (name)
+                body: (member_access_expression
+                  object: (variable_name (name))
+                  name: (name)))))
+          (property_promotion_parameter
+            type: (primitive_type)
+            name: (variable_name (name))
+            default_value: (integer)
+            (property_hook_list
+              (property_hook
+                (name)
+                body: (binary_expression
+                  left: (variable_name (name))
+                  right: (integer))))))
+        body: (compound_statement))))
+  (function_definition
+    name: (name)
+    parameters: (formal_parameters
+      (simple_parameter
+        type: (primitive_type)
+        reference_modifier: (reference_modifier)
+        name: (variable_name (name))
+        default_value: (integer)))
+    body: (compound_statement)))

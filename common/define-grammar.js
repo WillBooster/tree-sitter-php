@@ -652,19 +652,28 @@ module.exports = function defineGrammar(dialect) {
 
       property_promotion_parameter: $ => seq(
         optional(field('attributes', $.attribute_list)),
-        repeat1(choice(
-          field('visibility', $.visibility_modifier),
-          field('readonly', $.readonly_modifier),
-          field('final', $.final_modifier),
-        )),
-        optional(field('type', $.type)), // Note: callable is not a valid type here, but instead of complicating the parser, we defer this checking to any intelligence using the parser
-        field('name', choice($.by_ref, $.variable_name)),
-        optional(seq('=', field('default_value', $.expression))),
-        optional($.property_hook_list),
+        choice(
+          seq(
+            repeat1(choice(
+              field('visibility', $.visibility_modifier),
+              field('readonly', $.readonly_modifier),
+              field('final', $.final_modifier),
+            )),
+            optional(field('type', $.type)),
+            field('name', choice($.by_ref, $.variable_name)),
+            optional(seq('=', field('default_value', $.expression))),
+            optional($.property_hook_list),
+          ),
+          seq($._simple_parameter, $.property_hook_list),
+        ),
       ),
 
       simple_parameter: $ => seq(
         optional(field('attributes', $.attribute_list)),
+        $._simple_parameter,
+      ),
+
+      _simple_parameter: $ => seq(
         field('type', optional($.type)),
         optional(field('reference_modifier', $.reference_modifier)),
         field('name', $.variable_name),
