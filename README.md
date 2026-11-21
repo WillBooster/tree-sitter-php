@@ -80,7 +80,7 @@ In Rust, depend on the [crate](https://crates.io/crates/willbooster-tree-sitter-
 fuzzed with:
 
 ```sh
-cargo add willbooster-tree-sitter@23.0.0 --rename tree-sitter
+cargo add willbooster-tree-sitter@23.0.2 --rename tree-sitter
 cargo add willbooster-tree-sitter-php --rename tree-sitter-php
 ```
 
