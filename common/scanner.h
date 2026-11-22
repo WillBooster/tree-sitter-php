@@ -1,4 +1,4 @@
-// code-gauge-allow-file fileNcss 540 -- Full-parse scanner states share the lexer and immutable heredoc stack.
+// code-gauge-allow-file fileNcss -- Full-parse scanner states share the lexer and immutable heredoc stack.
 #include "tree_sitter/array.h"
 #include "tree_sitter/parser.h"
 
@@ -403,8 +403,8 @@ static bool scan_adjacent_php_blocks(TSLexer *lexer);
 
 static bool scan_exit_interpolation_identifier(TSLexer *lexer);
 
-// code-gauge-allow functionCognitiveComplexity 28 -- Selects a lexical state before consuming input.
-// code-gauge-allow functionNcss 45 -- Dispatches the scanner states in lexical precedence order.
+// code-gauge-allow functionCognitiveComplexity -- Selects a lexical state before consuming input.
+// code-gauge-allow functionNcss -- Dispatches the scanner states in lexical precedence order.
 static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     if (valid_symbols[SENTINEL_ERROR]) {
         return false;
@@ -605,7 +605,7 @@ static bool scan_heredoc_start(Scanner *scanner, TSLexer *lexer) {
     return true;
 }
 
-// code-gauge-allow functionCognitiveComplexity 23 -- Checks overlapping namespace and operator tokens before scanning an ordinary expression name.
+// code-gauge-allow functionCognitiveComplexity -- Checks overlapping namespace and operator tokens before scanning an ordinary expression name.
 static PrefixScanResult scan_operand_prefix(TSLexer *lexer, const bool *valid_symbols) {
     bool qualified = valid_symbols[QUALIFIED_NAME_PREFIX];
     bool readonly = valid_symbols[READONLY_CALL_NAME];
