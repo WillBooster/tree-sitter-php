@@ -48,7 +48,7 @@
   "devDependencies": {
     "@tsconfig/bun": "1.0.12",
     "@types/bun": "1.4.5",
-    "@vitest/browser-playwright": "5.1.0",
+    "@vitest/browser-playwright": "5.1.1",
     "@willbooster/oxlint-config": "1.4.9",
     "@willbooster/wb": "23.6.1",
     "@willbooster/web-tree-sitter": "23.0.2",
@@ -58,7 +58,7 @@
     "oxlint-tsgolint": "7.0.2007",
     "playwright": "1.65.1",
     "semantic-release": "25.0.9",
-    "vitest": "5.1.0",
+    "vitest": "5.1.1",
     "wrangler": "4.156.0"
   },
   "peerDependencies": {
